@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
-export default function BottomNav() {
+export default function MobileNav() {
+  const [isOpen, setIsOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
   const isAdmin = user?.role === 'admin'
 
@@ -26,26 +28,86 @@ export default function BottomNav() {
     ? [...baseTabs, ...adminTabs]
     : [...baseTabs, ...memberTabs]
 
+  const close = () => setIsOpen(false)
+
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 flex z-40">
-      {tabs.map(({ to, label, icon: Icon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          className={({ isActive }) =>
-            `flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
-              isActive ? 'text-teal-600' : 'text-stone-500'
-            }`
-          }
+    <>
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-12 bg-white border-b border-stone-200 flex items-center px-4">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-1.5 rounded-md text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+          aria-label="Open menu"
         >
-          <Icon className="w-5 h-5" />
-          <span className="text-[10px] leading-tight">{label}</span>
-        </NavLink>
-      ))}
-    </nav>
+          <HamburgerIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Backdrop */}
+      <div
+        className={`lg:hidden fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={close}
+      />
+
+      {/* Slide-out drawer */}
+      <div
+        className={`lg:hidden fixed top-0 left-0 bottom-0 z-50 w-64 bg-white shadow-xl flex flex-col transform transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Drawer header */}
+        <div className="flex items-center justify-between px-4 h-12 border-b border-stone-200 flex-shrink-0">
+          <span className="text-sm font-semibold text-stone-700 tracking-wide uppercase">Menu</span>
+          <button
+            onClick={close}
+            className="p-1.5 rounded-md text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+            aria-label="Close menu"
+          >
+            <CloseIcon className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Nav links */}
+        <nav className="flex-1 overflow-y-auto py-3 px-3">
+          {tabs.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={close}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-0.5 transition-colors ${
+                  isActive
+                    ? 'bg-teal-50 text-teal-700'
+                    : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+                }`
+              }
+            >
+              <Icon className="w-5 h-5 flex-shrink-0" />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+    </>
   )
 }
 
+function HamburgerIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  )
+}
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+}
 function ClockIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 15" /></svg>
 }
