@@ -5,7 +5,7 @@ import ActiveTimerBar from './ActiveTimerBar'
 
 export default function Layout() {
   return (
-    <div className="flex h-screen overflow-hidden bg-stone-50">
+    <div className="flex h-[100svh] overflow-hidden bg-stone-50">
       {/* Desktop Sidebar */}
       <Sidebar />
 
@@ -16,7 +16,7 @@ export default function Layout() {
           <ActiveTimerBar />
         </div>
 
-        <main className="flex-1 overflow-y-auto overscroll-contain lg:pt-0">
+        <main className="flex-1 overflow-y-auto overscroll-contain lg:pt-0 pb-4">
           <Outlet />
         </main>
 
