@@ -16,7 +16,7 @@ import { checkBudgetResets } from './lib/budgetReset'
 const app = express()
 const PORT = process.env.PORT || 3001
 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }))
+app.use(cors({ origin: ['http://localhost:5173', 'https://courteous-miracle-production-2038.up.railway.app'], credentials: true }))
 app.use(express.json())
 
 app.use('/api/v1/auth', authRouter)
