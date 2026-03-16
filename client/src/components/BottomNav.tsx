@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { avatarInitials } from '../lib/utils'
 
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
+  const clearAuth = useAuthStore((s) => s.clearAuth)
   const isAdmin = user?.role === 'admin'
 
   const baseTabs = [
@@ -89,6 +91,35 @@ export default function MobileNav() {
             </NavLink>
           ))}
         </nav>
+
+        {/* User footer */}
+        {user && (
+          <div className="p-3 border-t border-stone-200 flex-shrink-0">
+            <div className="flex items-center gap-3 px-3 py-2">
+              <Link to="/account" onClick={close} className="flex items-center gap-3 flex-1 min-w-0 group">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 group-hover:ring-2 group-hover:ring-offset-1 group-hover:ring-stone-300 transition-all"
+                  style={{ backgroundColor: user.avatarColor }}
+                >
+                  {avatarInitials(user.name)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-stone-900 truncate group-hover:text-teal-700 transition-colors">{user.name}</p>
+                  <p className="text-xs text-stone-500 truncate">{user.role}</p>
+                </div>
+              </Link>
+              <button
+                onClick={() => { close(); clearAuth() }}
+                className="text-stone-400 hover:text-stone-600 transition-colors flex-shrink-0"
+                title="Sign out"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   )

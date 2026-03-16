@@ -16,7 +16,7 @@ export default function Layout() {
           <ActiveTimerBar />
         </div>
 
-        <main className="flex-1 overflow-y-auto lg:pt-0">
+        <main className="flex-1 overflow-y-auto overscroll-contain lg:pt-0">
           <Outlet />
         </main>
 
