@@ -60,6 +60,10 @@ export default function TodayPage() {
   const [manualProjectData, setManualProjectData] = useState<Project | null>(null)
   const [additionalUserIds, setAdditionalUserIds] = useState<string[]>([])
 
+  // Teammate viewing
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null)
+  const [showTeammatesDropdown, setShowTeammatesDropdown] = useState(false)
+
   // Week nav
   const todayStr = toInputDate(new Date())
   const [selectedDate, setSelectedDate] = useState(todayStr)
@@ -79,23 +83,11 @@ export default function TodayPage() {
   const weekStart = weekDays[0]
   const weekEnd = addDays(weekDays[6], 1)
   const { data: entries = [], isLoading } = useQuery<TimeEntry[]>({
-    queryKey: ['time-entries', weekOffset],
+    queryKey: ['time-entries', weekOffset, viewingUserId ?? user?.id],
     queryFn: () =>
       api.get('/time-entries', {
-        params: { startDate: toInputDate(weekStart), endDate: toInputDate(weekEnd), userId: user?.id },
+        params: { startDate: toInputDate(weekStart), endDate: toInputDate(weekEnd), userId: viewingUserId ?? user?.id },
       }).then(r => r.data),
-  })
-
-  // Fetch today's team entries (admin only)
-  const today = toInputDate(new Date())
-  const { data: teamEntries = [] } = useQuery<TimeEntry[]>({
-    queryKey: ['team-entries-today', today],
-    queryFn: () => {
-      const tomorrow = new Date()
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
-      return api.get('/time-entries', { params: { startDate: today, endDate: toInputDate(tomorrow) } }).then(r => r.data)
-    },
-    enabled: user?.role === 'admin',
   })
 
   // Fetch projects for task loading
@@ -110,6 +102,8 @@ export default function TodayPage() {
     queryFn: () => api.get('/users').then(r => r.data),
   })
   const otherUsers = allUsers.filter(u => u.id !== user?.id)
+  const viewingUser = viewingUserId ? (allUsers.find(u => u.id === viewingUserId) ?? null) : null
+  const isViewingTeammate = viewingUserId !== null
 
   const startMutation = useMutation({
     mutationFn: (data: { projectId: string; taskId: string; notes: string; additionalUserIds?: string[] }) =>
@@ -117,7 +111,7 @@ export default function TodayPage() {
     onSuccess: (data) => {
       setRunningEntry(data)
       qc.invalidateQueries({ queryKey: ['time-entries'] })
-      qc.invalidateQueries({ queryKey: ['team-entries-today'] })
+
       setTimerNotes('')
       setTimerAdditionalUserIds([])
       toast.success('Timer started')
@@ -133,7 +127,7 @@ export default function TodayPage() {
         old.map(e => e.id === stoppedEntry.id ? stoppedEntry : e)
       )
       qc.invalidateQueries({ queryKey: ['time-entries'] })
-      qc.invalidateQueries({ queryKey: ['team-entries-today'] })
+
       toast.success('Timer stopped')
     },
     onError: () => toast.error('Failed to stop timer'),
@@ -144,7 +138,7 @@ export default function TodayPage() {
       api.post('/time-entries', data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['time-entries'] })
-      qc.invalidateQueries({ queryKey: ['team-entries-today'] })
+
       setShowManual(false)
       setManualProject('')
       setManualTask('')
@@ -171,7 +165,7 @@ export default function TodayPage() {
     mutationFn: (id: string) => api.delete(`/time-entries/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['time-entries'] })
-      qc.invalidateQueries({ queryKey: ['team-entries-today'] })
+
       toast.success('Entry deleted')
     },
     onError: () => toast.error('Failed to delete'),
@@ -237,14 +231,6 @@ export default function TodayPage() {
   const selectedDayEntries = entries.filter(e => toInputDate(e.date) === selectedDate)
   const selectedDayTotal = selectedDayEntries.filter(e => !e.isRunning).reduce((sum, e) => sum + e.hours, 0)
 
-  // Team entries grouped by user (excluding current user)
-  const teamOtherEntries = teamEntries.filter(e => e.user.id !== user?.id)
-  const teamByUser: Record<string, TimeEntry[]> = {}
-  for (const e of teamOtherEntries) {
-    if (!teamByUser[e.user.id]) teamByUser[e.user.id] = []
-    teamByUser[e.user.id].push(e)
-  }
-
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       {/* Header */}
@@ -255,12 +241,66 @@ export default function TodayPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-mono font-medium text-stone-900">{formatHours(todayTotal)}</span>
-          <button onClick={() => setShowManual(true)} className="btn-secondary">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            Add time
-          </button>
+          {otherUsers.length > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => setShowTeammatesDropdown(o => !o)}
+                className={`btn-secondary text-sm ${isViewingTeammate ? 'ring-1 ring-stone-300' : ''}`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                Teammates
+              </button>
+              {showTeammatesDropdown && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowTeammatesDropdown(false)} />
+                  <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-stone-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden">
+                    {otherUsers.map(u => (
+                      <button
+                        key={u.id}
+                        onClick={() => { setViewingUserId(u.id); setShowTeammatesDropdown(false) }}
+                        className={`flex items-center gap-3 w-full px-3 py-2.5 hover:bg-stone-50 text-left transition-colors ${viewingUserId === u.id ? 'bg-stone-50 font-medium' : ''}`}
+                      >
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                          style={{ backgroundColor: u.avatarColor }}
+                        >
+                          {avatarInitials(u.name)}
+                        </div>
+                        <span className="text-sm text-stone-700">{u.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {!isViewingTeammate && (
+            <button onClick={() => setShowManual(true)} className="btn-secondary">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              Add time
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Teammate viewing banner */}
+      {isViewingTeammate && viewingUser && (
+        <div className="flex items-center gap-3 px-4 py-3 mb-6 bg-stone-100 border border-stone-200 rounded-xl">
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+            style={{ backgroundColor: viewingUser.avatarColor }}
+          >
+            {avatarInitials(viewingUser.name)}
+          </div>
+          <p className="text-sm font-medium text-stone-700 flex-1">Viewing {viewingUser.name}'s time logs</p>
+          <button
+            onClick={() => setViewingUserId(null)}
+            className="btn-secondary text-sm"
+          >
+            Back to my logs
+          </button>
+        </div>
+      )}
 
       {/* Weekly Day Navigation */}
       <div className="card p-2 mb-6">
@@ -320,6 +360,7 @@ export default function TodayPage() {
       </div>
 
       {/* Timer widget */}
+      {!isViewingTeammate && (
       <div className="card p-4 mb-6">
         {runningEntry ? (
           <div className="flex items-center gap-4">
@@ -491,6 +532,7 @@ export default function TodayPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Manual entry modal */}
       {showManual && (
@@ -681,7 +723,7 @@ export default function TodayPage() {
           <div className="divide-y divide-stone-100">
             {selectedDayEntries.map(entry => (
               <div key={entry.id} className="px-4 py-3">
-                {editId === entry.id ? (
+                {editId === entry.id && !isViewingTeammate ? (
                   <div className="flex items-center gap-3 flex-wrap">
                     <input
                       type="date"
@@ -729,7 +771,7 @@ export default function TodayPage() {
                     <span className="font-mono text-sm font-medium text-stone-700 flex-shrink-0">
                       {entry.isRunning ? formatTimer(elapsedSeconds) : formatHours(entry.hours)}
                     </span>
-                    {!entry.isRunning && (
+                    {!entry.isRunning && !isViewingTeammate && (
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button onClick={() => startEdit(entry)} className="btn-ghost px-2 py-1">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -750,58 +792,6 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Team activity today (admin only) */}
-      {user?.role === 'admin' && Object.keys(teamByUser).length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-3">Team — Today</h2>
-          <div className="space-y-4">
-            {Object.entries(teamByUser).map(([userId, userEntries]) => {
-              const u = userEntries[0].user
-              const userTotal = userEntries.filter(e => !e.isRunning).reduce((s, e) => s + e.hours, 0)
-              return (
-                <div key={userId} className="card overflow-hidden">
-                  <div className="flex items-center gap-3 px-4 py-3 bg-stone-50 border-b border-stone-100">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
-                      style={{ backgroundColor: u.avatarColor }}
-                    >
-                      {avatarInitials(u.name)}
-                    </div>
-                    <span className="text-sm font-medium text-stone-700 flex-1">{u.name}</span>
-                    <span className="font-mono text-sm font-medium text-stone-600">{formatHours(userTotal)}</span>
-                  </div>
-                  <div className="divide-y divide-stone-100">
-                    {userEntries.map(entry => (
-                      <div key={entry.id} className="flex items-center gap-3 px-4 py-3">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.project.color }} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-stone-900 truncate">
-                            {entry.project.client.name} — {entry.project.name}
-                          </p>
-                          <p className="text-xs text-stone-500 truncate">
-                            {entry.task.name}
-                            {entry.notes && <span className="ml-2 text-stone-400">{entry.notes}</span>}
-                          </p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          {entry.isRunning ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                              Running
-                            </span>
-                          ) : (
-                            <span className="font-mono text-sm font-medium text-stone-700">{formatHours(entry.hours)}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
