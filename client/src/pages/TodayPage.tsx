@@ -45,9 +45,13 @@ export default function TodayPage() {
 
   // Timer widget "also track for"
   const [timerAdditionalUserIds, setTimerAdditionalUserIds] = useState<string[]>([])
+  const [showTimerUserPicker, setShowTimerUserPicker] = useState(false)
+  const [timerUserSearch, setTimerUserSearch] = useState('')
 
   // Manual entry form
   const [showManual, setShowManual] = useState(false)
+  const [showManualUserPicker, setShowManualUserPicker] = useState(false)
+  const [manualUserSearch, setManualUserSearch] = useState('')
   const [manualDate, setManualDate] = useState(toInputDate(new Date()))
   const [manualProject, setManualProject] = useState('')
   const [manualTask, setManualTask] = useState('')
@@ -365,31 +369,86 @@ export default function TodayPage() {
               className="input w-full"
             />
             {otherUsers.length > 0 && (
-              <div>
-                <label className="label">Also track for</label>
-                <div className="border border-stone-200 rounded-lg divide-y divide-stone-100 max-h-36 overflow-y-auto">
-                  {otherUsers.map(u => (
-                    <label key={u.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-stone-50">
-                      <input
-                        type="checkbox"
-                        checked={timerAdditionalUserIds.includes(u.id)}
-                        onChange={e => {
-                          setTimerAdditionalUserIds(prev =>
-                            e.target.checked ? [...prev, u.id] : prev.filter(id => id !== u.id)
-                          )
-                        }}
-                        className="rounded border-stone-300 text-orange-500 focus:ring-orange-400"
-                      />
-                      <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
-                        style={{ backgroundColor: u.avatarColor }}
-                      >
-                        {u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => { setShowTimerUserPicker(true); setTimerUserSearch('') }}
+                  className="btn-secondary text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  Also track for{timerAdditionalUserIds.length > 0 ? ` (${timerAdditionalUserIds.length})` : ''}
+                </button>
+                {timerAdditionalUserIds.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {timerAdditionalUserIds.map(id => {
+                      const u = otherUsers.find(u => u.id === id)
+                      if (!u) return null
+                      return (
+                        <span key={id} className="flex items-center gap-1 bg-stone-100 rounded-full pl-1 pr-2 py-0.5 text-xs text-stone-700">
+                          <div
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0"
+                            style={{ backgroundColor: u.avatarColor }}
+                          >
+                            {u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </div>
+                          {u.name.split(' ')[0]}
+                          <button
+                            type="button"
+                            onClick={() => setTimerAdditionalUserIds(prev => prev.filter(i => i !== id))}
+                            className="ml-0.5 text-stone-400 hover:text-stone-600"
+                          >×</button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+                {showTimerUserPicker && (
+                  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setShowTimerUserPicker(false)}>
+                    <div className="card w-full max-w-sm p-4 space-y-3" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-stone-900 text-sm">Also track for</h3>
+                        <button type="button" onClick={() => setShowTimerUserPicker(false)} className="text-stone-400 hover:text-stone-600">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
                       </div>
-                      <span className="text-sm text-stone-700">{u.name}</span>
-                    </label>
-                  ))}
-                </div>
+                      <input
+                        type="text"
+                        value={timerUserSearch}
+                        onChange={e => setTimerUserSearch(e.target.value)}
+                        placeholder="Search people..."
+                        className="input w-full"
+                        autoFocus
+                      />
+                      <div className="divide-y divide-stone-100 max-h-60 overflow-y-auto -mx-4 px-4">
+                        {otherUsers.filter(u => u.name.toLowerCase().includes(timerUserSearch.toLowerCase())).map(u => (
+                          <label key={u.id} className="flex items-center gap-3 py-2 cursor-pointer hover:bg-stone-50 -mx-4 px-4">
+                            <input
+                              type="checkbox"
+                              checked={timerAdditionalUserIds.includes(u.id)}
+                              onChange={e => {
+                                setTimerAdditionalUserIds(prev =>
+                                  e.target.checked ? [...prev, u.id] : prev.filter(id => id !== u.id)
+                                )
+                              }}
+                              className="rounded border-stone-300 text-orange-500 focus:ring-orange-400"
+                            />
+                            <div
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                              style={{ backgroundColor: u.avatarColor }}
+                            >
+                              {u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </div>
+                            <span className="text-sm text-stone-700">{u.name}</span>
+                          </label>
+                        ))}
+                        {otherUsers.filter(u => u.name.toLowerCase().includes(timerUserSearch.toLowerCase())).length === 0 && (
+                          <p className="text-sm text-stone-400 py-3 text-center">No people found</p>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => setShowTimerUserPicker(false)} className="btn-primary w-full justify-center">Done</button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div className="flex items-center gap-3 flex-wrap">
@@ -484,31 +543,88 @@ export default function TodayPage() {
                 <input type="text" value={manualNotes} onChange={e => setManualNotes(e.target.value)} className="input" />
               </div>
               {otherUsers.length > 0 && (
-                <div>
-                  <label className="label">Also track for</label>
-                  <div className="border border-stone-200 rounded-lg divide-y divide-stone-100 max-h-36 overflow-y-auto">
-                    {otherUsers.map(u => (
-                      <label key={u.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-stone-50">
-                        <input
-                          type="checkbox"
-                          checked={additionalUserIds.includes(u.id)}
-                          onChange={e => {
-                            setAdditionalUserIds(prev =>
-                              e.target.checked ? [...prev, u.id] : prev.filter(id => id !== u.id)
-                            )
-                          }}
-                          className="rounded border-stone-300 text-orange-500 focus:ring-orange-400"
-                        />
-                        <div
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
-                          style={{ backgroundColor: u.avatarColor }}
-                        >
-                          {u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                        </div>
-                        <span className="text-sm text-stone-700">{u.name}</span>
-                      </label>
-                    ))}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => { setShowManualUserPicker(true); setManualUserSearch('') }}
+                      className="btn-secondary text-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      Also track for{additionalUserIds.length > 0 ? ` (${additionalUserIds.length})` : ''}
+                    </button>
+                    {additionalUserIds.length > 0 && (
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {additionalUserIds.map(id => {
+                          const u = otherUsers.find(u => u.id === id)
+                          if (!u) return null
+                          return (
+                            <span key={id} className="flex items-center gap-1 bg-stone-100 rounded-full pl-1 pr-2 py-0.5 text-xs text-stone-700">
+                              <div
+                                className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0"
+                                style={{ backgroundColor: u.avatarColor }}
+                              >
+                                {u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                              </div>
+                              {u.name.split(' ')[0]}
+                              <button
+                                type="button"
+                                onClick={() => setAdditionalUserIds(prev => prev.filter(i => i !== id))}
+                                className="ml-0.5 text-stone-400 hover:text-stone-600"
+                              >×</button>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
+                  {showManualUserPicker && (
+                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] p-4" onClick={() => setShowManualUserPicker(false)}>
+                      <div className="card w-full max-w-sm p-4 space-y-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-stone-900 text-sm">Also track for</h3>
+                          <button type="button" onClick={() => setShowManualUserPicker(false)} className="text-stone-400 hover:text-stone-600">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={manualUserSearch}
+                          onChange={e => setManualUserSearch(e.target.value)}
+                          placeholder="Search people..."
+                          className="input w-full"
+                          autoFocus
+                        />
+                        <div className="divide-y divide-stone-100 max-h-60 overflow-y-auto -mx-4 px-4">
+                          {otherUsers.filter(u => u.name.toLowerCase().includes(manualUserSearch.toLowerCase())).map(u => (
+                            <label key={u.id} className="flex items-center gap-3 py-2 cursor-pointer hover:bg-stone-50 -mx-4 px-4">
+                              <input
+                                type="checkbox"
+                                checked={additionalUserIds.includes(u.id)}
+                                onChange={e => {
+                                  setAdditionalUserIds(prev =>
+                                    e.target.checked ? [...prev, u.id] : prev.filter(id => id !== u.id)
+                                  )
+                                }}
+                                className="rounded border-stone-300 text-orange-500 focus:ring-orange-400"
+                              />
+                              <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                                style={{ backgroundColor: u.avatarColor }}
+                              >
+                                {u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                              </div>
+                              <span className="text-sm text-stone-700">{u.name}</span>
+                            </label>
+                          ))}
+                          {otherUsers.filter(u => u.name.toLowerCase().includes(manualUserSearch.toLowerCase())).length === 0 && (
+                            <p className="text-sm text-stone-400 py-3 text-center">No people found</p>
+                          )}
+                        </div>
+                        <button type="button" onClick={() => setShowManualUserPicker(false)} className="btn-primary w-full justify-center">Done</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="flex gap-2 pt-1">
