@@ -43,6 +43,7 @@ export default function TodayPage() {
   const [timerTask, setTimerTask] = useState('')
   const [timerNotes, setTimerNotes] = useState('')
   const [logHours, setLogHours] = useState('')
+  const [logDate, setLogDate] = useState(toInputDate(new Date()))
   const [timerProjectData, setTimerProjectData] = useState<Project | null>(null)
 
   // Manual entry form
@@ -69,7 +70,7 @@ export default function TodayPage() {
       const end = new Date()
       end.setUTCDate(end.getUTCDate() + 1)
       return api.get('/time-entries', {
-        params: { startDate: toInputDate(start), endDate: toInputDate(end) },
+        params: { startDate: toInputDate(start), endDate: toInputDate(end), userId: user?.id },
       }).then(r => r.data)
     },
   })
@@ -168,11 +169,12 @@ export default function TodayPage() {
     createMutation.mutate({
       projectId: timerProject,
       taskId: timerTask,
-      date: toInputDate(new Date()),
+      date: logDate,
       hours,
       notes: timerNotes,
     })
     setLogHours('')
+    setLogDate(toInputDate(new Date()))
     setTimerNotes('')
     setTimerProject('')
     setTimerTask('')
@@ -273,7 +275,7 @@ export default function TodayPage() {
               placeholder="What are you working on? (optional)"
               className="input w-full"
             />
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <button
                 type="button"
                 onClick={handleStartTimer}
@@ -284,7 +286,13 @@ export default function TodayPage() {
                 Start timer
               </button>
               <span className="text-stone-400 text-sm">or</span>
-              <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-center gap-2 flex-1 flex-wrap">
+                <input
+                  type="date"
+                  value={logDate}
+                  onChange={e => setLogDate(e.target.value)}
+                  className="input w-36"
+                />
                 <input
                   type="number"
                   step="0.25"
