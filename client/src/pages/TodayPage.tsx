@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { format, isToday as dateFnsIsToday, parseISO } from 'date-fns'
+import { format, isToday as dateFnsIsToday, parseISO, startOfWeek, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
 import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -23,14 +23,10 @@ interface TimeEntry {
   user: { id: string; name: string; avatarColor: string }
 }
 
-function groupByDate(entries: TimeEntry[]) {
-  const groups: Record<string, TimeEntry[]> = {}
-  for (const e of entries) {
-    const key = toInputDate(e.date)
-    if (!groups[key]) groups[key] = []
-    groups[key].push(e)
-  }
-  return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a))
+function formatNavHours(hours: number): string {
+  const h = Math.floor(hours)
+  const m = Math.round((hours - h) * 60)
+  return `${h}:${String(m).padStart(2, '0')}`
 }
 
 export default function TodayPage() {
@@ -54,6 +50,14 @@ export default function TodayPage() {
   const [manualHours, setManualHours] = useState('')
   const [manualNotes, setManualNotes] = useState('')
   const [manualProjectData, setManualProjectData] = useState<Project | null>(null)
+
+  // Week nav
+  const todayStr = toInputDate(new Date())
+  const [selectedDate, setSelectedDate] = useState(todayStr)
+  const weekDays = (() => {
+    const monday = startOfWeek(new Date(), { weekStartsOn: 1 })
+    return Array.from({ length: 7 }, (_, i) => addDays(monday, i))
+  })()
 
   // Editing
   const [editId, setEditId] = useState<string | null>(null)
@@ -196,10 +200,12 @@ export default function TodayPage() {
     setEditNotes(entry.notes || '')
   }
 
-  const grouped = groupByDate(entries)
   const todayTotal = entries
     .filter(e => dateFnsIsToday(parseISO(e.date)) && !e.isRunning)
     .reduce((sum, e) => sum + e.hours, 0)
+
+  const selectedDayEntries = entries.filter(e => toInputDate(e.date) === selectedDate)
+  const selectedDayTotal = selectedDayEntries.filter(e => !e.isRunning).reduce((sum, e) => sum + e.hours, 0)
 
   // Team entries grouped by user (excluding current user)
   const teamOtherEntries = teamEntries.filter(e => e.user.id !== user?.id)
@@ -223,6 +229,44 @@ export default function TodayPage() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             Add time
           </button>
+        </div>
+      </div>
+
+      {/* Weekly Day Navigation */}
+      <div className="card p-2 mb-6">
+        <div className="grid grid-cols-7">
+          {weekDays.map((day) => {
+            const dayStr = toInputDate(day)
+            const isCurrentToday = dayStr === todayStr
+            const isSelected = dayStr === selectedDate
+            const dayTotal = entries
+              .filter(e => toInputDate(e.date) === dayStr && !e.isRunning)
+              .reduce((sum, e) => sum + e.hours, 0)
+
+            return (
+              <button
+                key={dayStr}
+                onClick={() => setSelectedDate(dayStr)}
+                className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
+                  isSelected && !isCurrentToday
+                    ? 'bg-stone-100'
+                    : isSelected && isCurrentToday
+                    ? 'bg-orange-50'
+                    : 'hover:bg-stone-50'
+                }`}
+              >
+                <span className={`text-xs mb-0.5 ${isCurrentToday ? 'font-bold text-stone-900' : 'font-medium text-stone-400'}`}>
+                  {format(day, 'EEE')}
+                </span>
+                <span className={`text-xs font-mono ${isSelected ? 'text-stone-900 font-semibold' : 'text-stone-400'}`}>
+                  {formatNavHours(dayTotal)}
+                </span>
+                {isCurrentToday && (
+                  <div className="w-4 h-0.5 bg-orange-400 rounded-full mt-1" />
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -378,7 +422,20 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* My time entries grouped by date */}
+      {/* Return to Today button */}
+      {selectedDate !== todayStr && (
+        <div className="mb-4">
+          <button
+            onClick={() => setSelectedDate(todayStr)}
+            className="btn-secondary text-sm"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            Return to Today
+          </button>
+        </div>
+      )}
+
+      {/* My time entries for selected day */}
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
@@ -391,92 +448,86 @@ export default function TodayPage() {
             </div>
           ))}
         </div>
-      ) : grouped.length === 0 ? (
+      ) : selectedDayEntries.length === 0 ? (
         <div className="text-center py-16 text-stone-400">
           <svg className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 15" /></svg>
-          <p className="font-medium">No time entries yet</p>
-          <p className="text-sm mt-1">Start a timer or add time manually</p>
+          <p className="font-medium">No time entries</p>
+          <p className="text-sm mt-1">
+            {selectedDate === todayStr ? 'Start a timer or add time manually' : format(parseISO(selectedDate), 'EEEE, MMM d')}
+          </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {grouped.map(([dateKey, dayEntries]) => {
-            const dayTotal = dayEntries.filter(e => !e.isRunning).reduce((s, e) => s + e.hours, 0)
-            const isToday = dateFnsIsToday(parseISO(dateKey))
-            return (
-              <div key={dateKey} className="card overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-b border-stone-100">
-                  <span className="text-sm font-medium text-stone-700">
-                    {isToday ? 'Today' : format(parseISO(dateKey), 'EEEE, MMM d')}
-                  </span>
-                  <span className="font-mono text-sm font-medium text-stone-600">{formatHours(dayTotal)}</span>
-                </div>
-                <div className="divide-y divide-stone-100">
-                  {dayEntries.map(entry => (
-                    <div key={entry.id} className="px-4 py-3">
-                      {editId === entry.id ? (
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <input
-                            type="date"
-                            value={editDate}
-                            onChange={e => setEditDate(e.target.value)}
-                            className="input w-36"
-                          />
-                          <input
-                            type="number"
-                            step="0.25"
-                            value={editHours}
-                            onChange={e => setEditHours(e.target.value)}
-                            className="input w-24"
-                          />
-                          <input
-                            type="text"
-                            value={editNotes}
-                            onChange={e => setEditNotes(e.target.value)}
-                            placeholder="Notes"
-                            className="input flex-1"
-                          />
-                          <button
-                            onClick={() => updateMutation.mutate({ id: entry.id, date: editDate, hours: parseFloat(editHours), notes: editNotes })}
-                            className="btn-primary"
-                          >Save</button>
-                          <button onClick={() => setEditId(null)} className="btn-ghost">Cancel</button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.project.color }} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-stone-900 truncate">
-                              {entry.project.client.name} — {entry.project.name}
-                            </p>
-                            <p className="text-xs text-stone-500 truncate">
-                              {entry.task.name}
-                              {entry.notes && <span className="ml-2 text-stone-400">{entry.notes}</span>}
-                            </p>
-                          </div>
-                          <span className="font-mono text-sm font-medium text-stone-700 flex-shrink-0">
-                            {entry.isRunning ? formatTimer(elapsedSeconds) : formatHours(entry.hours)}
-                          </span>
-                          {!entry.isRunning && (
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <button onClick={() => startEdit(entry)} className="btn-ghost px-2 py-1">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                              </button>
-                              <button
-                                onClick={() => { if (confirm('Delete this entry?')) deleteMutation.mutate(entry.id) }}
-                                className="btn-ghost px-2 py-1 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
+        <div className="card overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-b border-stone-100">
+            <span className="text-sm font-medium text-stone-700">
+              {selectedDate === todayStr ? 'Today' : format(parseISO(selectedDate), 'EEEE, MMM d')}
+            </span>
+            <span className="font-mono text-sm font-medium text-stone-600">{formatHours(selectedDayTotal)}</span>
+          </div>
+          <div className="divide-y divide-stone-100">
+            {selectedDayEntries.map(entry => (
+              <div key={entry.id} className="px-4 py-3">
+                {editId === entry.id ? (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <input
+                      type="date"
+                      value={editDate}
+                      onChange={e => setEditDate(e.target.value)}
+                      className="input w-36"
+                    />
+                    <input
+                      type="number"
+                      step="0.25"
+                      value={editHours}
+                      onChange={e => setEditHours(e.target.value)}
+                      className="input w-24"
+                    />
+                    <input
+                      type="text"
+                      value={editNotes}
+                      onChange={e => setEditNotes(e.target.value)}
+                      placeholder="Notes"
+                      className="input flex-1"
+                    />
+                    <button
+                      onClick={() => updateMutation.mutate({ id: entry.id, date: editDate, hours: parseFloat(editHours), notes: editNotes })}
+                      className="btn-primary"
+                    >Save</button>
+                    <button onClick={() => setEditId(null)} className="btn-ghost">Cancel</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.project.color }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-stone-900 truncate">
+                        {entry.project.client.name} — {entry.project.name}
+                      </p>
+                      <p className="text-xs text-stone-500 truncate">
+                        {entry.task.name}
+                        {entry.notes && <span className="ml-2 text-stone-400">{entry.notes}</span>}
+                      </p>
                     </div>
-                  ))}
-                </div>
+                    <span className="font-mono text-sm font-medium text-stone-700 flex-shrink-0">
+                      {entry.isRunning ? formatTimer(elapsedSeconds) : formatHours(entry.hours)}
+                    </span>
+                    {!entry.isRunning && (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => startEdit(entry)} className="btn-ghost px-2 py-1">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button
+                          onClick={() => { if (confirm('Delete this entry?')) deleteMutation.mutate(entry.id) }}
+                          className="btn-ghost px-2 py-1 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )
-          })}
+            ))}
+          </div>
         </div>
       )}
 
