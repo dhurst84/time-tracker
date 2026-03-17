@@ -281,6 +281,9 @@ export default function TodayPage() {
                   <span className={`text-xs mb-0.5 ${isCurrentToday ? 'font-bold text-stone-900' : 'font-medium text-stone-400'}`}>
                     {format(day, 'EEE')}
                   </span>
+                  <span className={`text-xs ${isCurrentToday ? 'font-bold text-stone-900' : 'text-stone-400'}`}>
+                    {format(day, 'M/d')}
+                  </span>
                   <span className={`text-xs font-mono ${isSelected ? 'text-stone-900 font-semibold' : 'text-stone-400'}`}>
                     {formatNavHours(dayTotal)}
                   </span>
