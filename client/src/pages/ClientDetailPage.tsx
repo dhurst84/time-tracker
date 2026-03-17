@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import api from '../lib/api'
 import BudgetBar from '../components/BudgetBar'
+import ClientAvatar from '../components/ClientAvatar'
 import { formatHours } from '../lib/utils'
 
 interface Task { id: string; name: string; isBillable: boolean }
@@ -15,7 +16,7 @@ interface Project {
 }
 interface ClientGroup { id: string; name: string }
 interface Client {
-  id: string; name: string; email?: string; color: string
+  id: string; name: string; email?: string; website?: string; color: string
   group?: { id: string; name: string }
   projects: Project[]
 }
@@ -99,6 +100,7 @@ export default function ClientDetailPage() {
   const [showEditClient, setShowEditClient] = useState(false)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
+  const [editWebsite, setEditWebsite] = useState('')
   const [editColor, setEditColor] = useState(COLORS[0])
   const [editGroupId, setEditGroupId] = useState('')
 
@@ -144,6 +146,7 @@ export default function ClientDetailPage() {
     if (!client) return
     setEditName(client.name)
     setEditEmail(client.email || '')
+    setEditWebsite(client.website || '')
     setEditColor(client.color)
     setEditGroupId(client.group?.id || '')
     setShowEditClient(true)
@@ -188,9 +191,7 @@ export default function ClientDetailPage() {
 
       {/* Header */}
       <div className="flex items-start gap-4 mb-6">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-semibold" style={{ backgroundColor: client.color }}>
-          {client.name.slice(0, 2).toUpperCase()}
-        </div>
+        <ClientAvatar name={client.name} color={client.color} website={client.website} size="lg" />
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-stone-900">{client.name}</h1>
@@ -210,7 +211,7 @@ export default function ClientDetailPage() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="card w-full max-w-md p-5">
             <h2 className="font-semibold text-stone-900 mb-4">Edit Client</h2>
-            <form onSubmit={e => { e.preventDefault(); updateClient.mutate({ name: editName, email: editEmail, color: editColor, groupId: editGroupId || undefined }) }} className="space-y-3">
+            <form onSubmit={e => { e.preventDefault(); updateClient.mutate({ name: editName, email: editEmail, website: editWebsite || undefined, color: editColor, groupId: editGroupId || undefined }) }} className="space-y-3">
               <div>
                 <label className="label">Name *</label>
                 <input value={editName} onChange={e => setEditName(e.target.value)} className="input" required />
@@ -218,6 +219,10 @@ export default function ClientDetailPage() {
               <div>
                 <label className="label">Email</label>
                 <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} className="input" />
+              </div>
+              <div>
+                <label className="label">Website</label>
+                <input type="text" value={editWebsite} onChange={e => setEditWebsite(e.target.value)} className="input" placeholder="e.g. acme.com" />
               </div>
               <div>
                 <label className="label">Group</label>

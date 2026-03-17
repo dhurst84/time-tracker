@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import api from '../lib/api'
-import { avatarInitials, formatHours, toInputDate } from '../lib/utils'
+import { formatHours, toInputDate } from '../lib/utils'
+import ClientAvatar from '../components/ClientAvatar'
 
 interface ClientGroup { id: string; name: string; color: string }
 interface Client {
-  id: string; name: string; email?: string; color: string; isActive: boolean
+  id: string; name: string; email?: string; website?: string; color: string; isActive: boolean
   group?: ClientGroup
   _count: { projects: number }
 }
@@ -33,11 +34,12 @@ function ClientForm({ initial, groups, onSave, onCancel }: {
 }) {
   const [name, setName] = useState(initial?.name || '')
   const [email, setEmail] = useState(initial?.email || '')
+  const [website, setWebsite] = useState(initial?.website || '')
   const [color, setColor] = useState(initial?.color || COLORS[0])
   const [groupId, setGroupId] = useState(initial?.group?.id || '')
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSave({ name, email, color, groupId: groupId || undefined }) }} className="space-y-3">
+    <form onSubmit={e => { e.preventDefault(); onSave({ name, email, website: website || undefined, color, groupId: groupId || undefined }) }} className="space-y-3">
       <div>
         <label className="label">Name *</label>
         <input value={name} onChange={e => setName(e.target.value)} className="input" required />
@@ -45,6 +47,10 @@ function ClientForm({ initial, groups, onSave, onCancel }: {
       <div>
         <label className="label">Email</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input" />
+      </div>
+      <div>
+        <label className="label">Website</label>
+        <input type="text" value={website} onChange={e => setWebsite(e.target.value)} className="input" placeholder="e.g. acme.com" />
       </div>
       <div>
         <label className="label">Group</label>
@@ -296,12 +302,7 @@ export default function ClientsPage() {
                       const pct = budget > 0 ? Math.min(100, (hours / budget) * 100) : 0
                       return (
                         <div key={client.id} className={`flex items-start gap-4 pl-10 pr-4 py-3 ${!client.isActive ? 'opacity-60' : ''}`}>
-                          <div
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 mt-0.5"
-                            style={{ backgroundColor: client.color }}
-                          >
-                            {avatarInitials(client.name)}
-                          </div>
+                          <ClientAvatar name={client.name} color={client.color} website={client.website} className="mt-0.5" />
                           <div className="flex-1 min-w-0">
                             <Link to={`/clients/${client.id}`} className="text-sm font-medium text-stone-900 hover:text-blue-700 block truncate">
                               {client.name}

@@ -37,6 +37,7 @@ model Client {
   id          String       @id @default(cuid())
   name        String
   email       String?
+  website     String?
   color       String       @default("#6366f1")
   groupId     String?
   isActive    Boolean      @default(true)

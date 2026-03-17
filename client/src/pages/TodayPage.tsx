@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { format, isToday as dateFnsIsToday, parseISO, startOfWeek, addDays } from 'date-fns'
+import { format, isToday as dateFnsIsToday, parseISO, startOfWeek, addDays, addWeeks } from 'date-fns'
 import toast from 'react-hot-toast'
 import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -56,8 +56,9 @@ export default function TodayPage() {
   // Week nav
   const todayStr = toInputDate(new Date())
   const [selectedDate, setSelectedDate] = useState(todayStr)
+  const [weekOffset, setWeekOffset] = useState(0)
   const weekDays = (() => {
-    const monday = startOfWeek(new Date(), { weekStartsOn: 1 })
+    const monday = addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset)
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i))
   })()
 
@@ -67,18 +68,15 @@ export default function TodayPage() {
   const [editHours, setEditHours] = useState('')
   const [editNotes, setEditNotes] = useState('')
 
-  // Fetch last 14 days of entries for current user
+  // Fetch entries for the visible week
+  const weekStart = weekDays[0]
+  const weekEnd = addDays(weekDays[6], 1)
   const { data: entries = [], isLoading } = useQuery<TimeEntry[]>({
-    queryKey: ['time-entries'],
-    queryFn: () => {
-      const start = new Date()
-      start.setDate(start.getDate() - 13)
-      const end = new Date()
-      end.setUTCDate(end.getUTCDate() + 1)
-      return api.get('/time-entries', {
-        params: { startDate: toInputDate(start), endDate: toInputDate(end), userId: user?.id },
-      }).then(r => r.data)
-    },
+    queryKey: ['time-entries', weekOffset],
+    queryFn: () =>
+      api.get('/time-entries', {
+        params: { startDate: toInputDate(weekStart), endDate: toInputDate(weekEnd), userId: user?.id },
+      }).then(r => r.data),
   })
 
   // Fetch today's team entries (admin only)
@@ -251,39 +249,55 @@ export default function TodayPage() {
 
       {/* Weekly Day Navigation */}
       <div className="card p-2 mb-6">
-        <div className="grid grid-cols-7">
-          {weekDays.map((day) => {
-            const dayStr = toInputDate(day)
-            const isCurrentToday = dayStr === todayStr
-            const isSelected = dayStr === selectedDate
-            const dayTotal = entries
-              .filter(e => toInputDate(e.date) === dayStr && !e.isRunning)
-              .reduce((sum, e) => sum + e.hours, 0)
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setWeekOffset(o => o - 1)}
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors flex-shrink-0"
+            aria-label="Previous week"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <div className="grid grid-cols-7 flex-1">
+            {weekDays.map((day) => {
+              const dayStr = toInputDate(day)
+              const isCurrentToday = dayStr === todayStr
+              const isSelected = dayStr === selectedDate
+              const dayTotal = entries
+                .filter(e => toInputDate(e.date) === dayStr && !e.isRunning)
+                .reduce((sum, e) => sum + e.hours, 0)
 
-            return (
-              <button
-                key={dayStr}
-                onClick={() => setSelectedDate(dayStr)}
-                className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
-                  isSelected && !isCurrentToday
-                    ? 'bg-stone-100'
-                    : isSelected && isCurrentToday
-                    ? 'bg-orange-50'
-                    : 'hover:bg-stone-50'
-                }`}
-              >
-                <span className={`text-xs mb-0.5 ${isCurrentToday ? 'font-bold text-stone-900' : 'font-medium text-stone-400'}`}>
-                  {format(day, 'EEE')}
-                </span>
-                <span className={`text-xs font-mono ${isSelected ? 'text-stone-900 font-semibold' : 'text-stone-400'}`}>
-                  {formatNavHours(dayTotal)}
-                </span>
-                {isCurrentToday && (
-                  <div className="w-4 h-0.5 bg-orange-400 rounded-full mt-1" />
-                )}
-              </button>
-            )
-          })}
+              return (
+                <button
+                  key={dayStr}
+                  onClick={() => setSelectedDate(dayStr)}
+                  className={`flex flex-col items-center py-2 px-1 rounded-lg transition-colors ${
+                    isSelected && !isCurrentToday
+                      ? 'bg-stone-100'
+                      : isSelected && isCurrentToday
+                      ? 'bg-orange-50'
+                      : 'hover:bg-stone-50'
+                  }`}
+                >
+                  <span className={`text-xs mb-0.5 ${isCurrentToday ? 'font-bold text-stone-900' : 'font-medium text-stone-400'}`}>
+                    {format(day, 'EEE')}
+                  </span>
+                  <span className={`text-xs font-mono ${isSelected ? 'text-stone-900 font-semibold' : 'text-stone-400'}`}>
+                    {formatNavHours(dayTotal)}
+                  </span>
+                  {isCurrentToday && (
+                    <div className="w-4 h-0.5 bg-orange-400 rounded-full mt-1" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => setWeekOffset(o => o + 1)}
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors flex-shrink-0"
+            aria-label="Next week"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
         </div>
       </div>
 
@@ -468,10 +482,10 @@ export default function TodayPage() {
       )}
 
       {/* Return to Today button */}
-      {selectedDate !== todayStr && (
+      {(selectedDate !== todayStr || weekOffset !== 0) && (
         <div className="mb-4">
           <button
-            onClick={() => setSelectedDate(todayStr)}
+            onClick={() => { setSelectedDate(todayStr); setWeekOffset(0) }}
             className="btn-secondary text-sm"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
