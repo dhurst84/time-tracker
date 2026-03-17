@@ -22,7 +22,7 @@ interface MTDEntry {
   project: { client: { id: string; groupId: string | null } }
 }
 
-const COLORS = ['#0d9488','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626']
+const COLORS = ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626']
 
 function GroupForm({ initial, onSave, onCancel }: {
   initial?: Partial<ClientGroup>
@@ -198,7 +198,7 @@ export default function ClientGroupsPage() {
                 <p className="font-medium text-stone-900">{group.name}</p>
                 <div className="flex items-center gap-3 text-xs text-stone-500 mt-0.5 flex-wrap">
                   {group.description && <span>{group.description}</span>}
-                  <Link to={`/clients?group=${group.id}`} className="hover:text-teal-700 transition-colors">
+                  <Link to={`/clients?group=${group.id}`} className="hover:text-blue-700 transition-colors">
                     {group._count.clients} client{group._count.clients !== 1 ? 's' : ''}
                   </Link>
                   <span>·</span>

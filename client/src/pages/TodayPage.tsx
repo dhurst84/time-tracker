@@ -278,7 +278,7 @@ export default function TodayPage() {
               <p className="text-sm font-medium text-stone-900">{runningEntry.project.client.name} — {runningEntry.project.name}</p>
               <p className="text-xs text-stone-500">{runningEntry.task.name}</p>
             </div>
-            <span className="font-mono text-2xl font-medium text-teal-600">{formatTimer(elapsedSeconds)}</span>
+            <span className="font-mono text-2xl font-medium text-blue-600">{formatTimer(elapsedSeconds)}</span>
             <button
               onClick={() => stopMutation.mutate(runningEntry.id)}
               disabled={stopMutation.isPending}
@@ -566,8 +566,8 @@ export default function TodayPage() {
                         </div>
                         <div className="text-right flex-shrink-0">
                           {entry.isRunning ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-teal-600 font-medium">
-                              <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                            <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                               Running
                             </span>
                           ) : (

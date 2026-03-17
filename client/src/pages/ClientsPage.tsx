@@ -21,7 +21,7 @@ interface ProjectForBudget {
   budgetHours: number | null
 }
 
-const COLORS = ['#0d9488','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626']
+const COLORS = ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626']
 
 interface ClientFormData extends Partial<Client> { groupId?: string }
 
@@ -273,7 +273,7 @@ export default function ClientsPage() {
                       <div className="mt-1.5 pr-2">
                         <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${groupPct >= 100 ? 'bg-red-500' : groupPct >= 80 ? 'bg-amber-500' : 'bg-teal-500'}`}
+                            className={`h-full rounded-full transition-all ${groupPct >= 100 ? 'bg-red-500' : groupPct >= 80 ? 'bg-amber-500' : 'bg-blue-500'}`}
                             style={{ width: `${groupPct}%` }}
                           />
                         </div>
@@ -303,7 +303,7 @@ export default function ClientsPage() {
                             {avatarInitials(client.name)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <Link to={`/clients/${client.id}`} className="text-sm font-medium text-stone-900 hover:text-teal-700 block truncate">
+                            <Link to={`/clients/${client.id}`} className="text-sm font-medium text-stone-900 hover:text-blue-700 block truncate">
                               {client.name}
                             </Link>
                             <div className="flex items-center gap-3 text-xs text-stone-400 mt-0.5">
@@ -321,7 +321,7 @@ export default function ClientsPage() {
                               <div className="mt-2 pr-2">
                                 <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-teal-500'}`}
+                                    className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-blue-500'}`}
                                     style={{ width: `${pct}%` }}
                                   />
                                 </div>

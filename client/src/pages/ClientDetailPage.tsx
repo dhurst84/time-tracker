@@ -20,7 +20,7 @@ interface Client {
   projects: Project[]
 }
 
-const COLORS = ['#0d9488','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626']
+const COLORS = ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626']
 
 function ProjectForm({ clientId, onSave, onCancel, submitLabel = 'Create', initial }: {
   clientId: string
@@ -292,7 +292,7 @@ export default function ClientDetailPage() {
               <div key={project.id} className={`card p-4 flex items-center gap-4 ${!project.isActive ? 'opacity-60' : ''}`}>
                 <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
                 <div className="flex-1 min-w-0">
-                  <Link to={`/projects/${project.id}`} className="font-medium text-stone-900 hover:text-teal-700 block truncate">
+                  <Link to={`/projects/${project.id}`} className="font-medium text-stone-900 hover:text-blue-700 block truncate">
                     {project.name}
                   </Link>
                   <p className="text-xs text-stone-500 capitalize mt-0.5">{project.type.replace('_', ' ')} · {project.tasks.length} tasks</p>

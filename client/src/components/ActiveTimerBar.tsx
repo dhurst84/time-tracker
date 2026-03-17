@@ -21,7 +21,7 @@ export default function ActiveTimerBar() {
   if (!runningEntry) return null
 
   return (
-    <div className="bg-teal-600 text-white px-4 py-2.5 flex items-center gap-3">
+    <div className="bg-blue-600 text-white px-4 py-2.5 flex items-center gap-3">
       <div
         className="w-2 h-2 rounded-full bg-white animate-pulse flex-shrink-0"
       />
@@ -29,7 +29,7 @@ export default function ActiveTimerBar() {
         <p className="text-sm font-medium truncate">
           {runningEntry.project.client.name} — {runningEntry.project.name}
         </p>
-        <p className="text-xs text-teal-200 truncate">{runningEntry.task.name}</p>
+        <p className="text-xs text-blue-200 truncate">{runningEntry.task.name}</p>
       </div>
       <span className="font-mono text-sm font-medium flex-shrink-0">{formatTimer(elapsedSeconds)}</span>
       <button

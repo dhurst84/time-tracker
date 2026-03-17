@@ -165,7 +165,7 @@ export default function TasksPage() {
                   type="checkbox"
                   checked={isBillable}
                   onChange={e => setIsBillable(e.target.checked)}
-                  className="w-4 h-4 rounded border-stone-300 text-teal-600 focus:ring-teal-500"
+                  className="w-4 h-4 rounded border-stone-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm text-stone-700">Billable</span>
               </label>
@@ -174,7 +174,7 @@ export default function TasksPage() {
                   type="checkbox"
                   checked={isDefault}
                   onChange={e => setIsDefault(e.target.checked)}
-                  className="w-4 h-4 rounded border-stone-300 text-teal-600 focus:ring-teal-500"
+                  className="w-4 h-4 rounded border-stone-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm text-stone-700">Add to new projects automatically</span>
               </label>
@@ -184,7 +184,7 @@ export default function TasksPage() {
                     type="checkbox"
                     checked={addToExisting}
                     onChange={e => setAddToExisting(e.target.checked)}
-                    className="w-4 h-4 rounded border-stone-300 text-teal-600 focus:ring-teal-500"
+                    className="w-4 h-4 rounded border-stone-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm text-stone-700">Add to all existing projects</span>
                 </label>
@@ -220,7 +220,7 @@ export default function TasksPage() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Default tasks</h2>
-                <span className="text-xs text-stone-400 bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full">Auto-added to new projects</span>
+                <span className="text-xs text-stone-400 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">Auto-added to new projects</span>
               </div>
               <div className="card divide-y divide-stone-100">
                 {defaultTemplates.map(t => (
@@ -280,7 +280,7 @@ function TemplateRow({
         <span className="text-sm font-medium text-stone-900">{template.name}</span>
         <div className="flex items-center gap-2 mt-0.5">
           {template.isBillable ? (
-            <span className="text-xs text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">Billable</span>
+            <span className="text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">Billable</span>
           ) : (
             <span className="text-xs text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded">Non-billable</span>
           )}

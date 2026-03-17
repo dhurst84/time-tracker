@@ -21,7 +21,7 @@ interface TimeEntry {
   user: { id: string; name: string; avatarColor: string }
 }
 
-const COLORS = ['#0d9488','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626']
+const COLORS = ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626']
 
 const PERIOD_LABELS: Record<string, string> = {
   monthly: 'Monthly',
@@ -341,7 +341,7 @@ export default function ProjectDetailPage() {
                       </span>
                     )}
                     <div
-                      className="w-full bg-teal-500 rounded-t-sm"
+                      className="w-full bg-blue-500 rounded-t-sm"
                       style={{ height: `${barPct}%` }}
                     />
                   </div>

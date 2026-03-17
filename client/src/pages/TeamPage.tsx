@@ -113,7 +113,7 @@ export default function TeamPage() {
               onClick={() => setPreset(p.value)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 preset === p.value
-                  ? 'bg-teal-600 text-white'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
               }`}
             >
@@ -185,8 +185,8 @@ export default function TeamPage() {
                       </div>
                       <div className="text-right flex-shrink-0">
                         {entry.isRunning ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-teal-600 font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                          <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                             Running
                           </span>
                         ) : (

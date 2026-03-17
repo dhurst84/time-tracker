@@ -81,7 +81,7 @@ export default function MobileNav() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-0.5 transition-colors ${
                   isActive
-                    ? 'bg-teal-50 text-teal-700'
+                    ? 'bg-blue-50 text-blue-700'
                     : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                 }`
               }
@@ -104,7 +104,7 @@ export default function MobileNav() {
                   {avatarInitials(user.name)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-stone-900 truncate group-hover:text-teal-700 transition-colors">{user.name}</p>
+                  <p className="text-sm font-medium text-stone-900 truncate group-hover:text-blue-700 transition-colors">{user.name}</p>
                   <p className="text-xs text-stone-500 truncate">{user.role}</p>
                 </div>
               </Link>

@@ -20,7 +20,7 @@ const TABS: { id: ReportTab; label: string }[] = [
   { id: 'detail-log', label: 'Detail Log' },
 ]
 
-const CHART_COLORS = ['#0d9488','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626','#6366f1','#14b8a6']
+const CHART_COLORS = ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626','#6366f1','#3b82f6']
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -87,7 +87,7 @@ export default function ReportsPage() {
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip formatter={(v: number) => [`${v.toFixed(1)}h`, 'Hours']} />
-              <Bar dataKey="hours" fill="#0d9488" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="hours" fill="#2563eb" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -399,7 +399,7 @@ export default function ReportsPage() {
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {(['this_week', 'this_month', 'last_month', 'custom'] as Preset[]).map(p => (
           <button key={p} onClick={() => setPreset(p)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${preset === p ? 'bg-teal-600 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${preset === p ? 'bg-blue-600 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
             {p === 'this_week' ? 'This week' : p === 'this_month' ? 'This month' : p === 'last_month' ? 'Last month' : 'Custom'}
           </button>
         ))}

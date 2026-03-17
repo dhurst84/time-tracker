@@ -11,7 +11,7 @@ export default function BudgetBar({ used, budget, showLabel = true }: Props) {
   const pct = getBudgetPercent(used, budget)
   const status = getBudgetStatus(used, budget)
 
-  const barColor = status === 'over' ? 'bg-red-500' : status === 'warning' ? 'bg-amber-400' : 'bg-teal-500'
+  const barColor = status === 'over' ? 'bg-red-500' : status === 'warning' ? 'bg-amber-400' : 'bg-blue-500'
   const textColor = status === 'over' ? 'text-red-600' : status === 'warning' ? 'text-amber-600' : 'text-stone-500'
 
   return (

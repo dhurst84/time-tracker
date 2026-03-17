@@ -5,7 +5,7 @@ import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { avatarInitials } from '../lib/utils'
 
-const COLORS = ['#0d9488','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626','#6366f1','#f59e0b']
+const COLORS = ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626','#6366f1','#f59e0b']
 
 export default function AccountPage() {
   const { user, updateUser } = useAuthStore()

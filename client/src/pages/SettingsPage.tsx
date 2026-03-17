@@ -10,7 +10,7 @@ interface User {
   id: string; name: string; email: string; role: string; avatarColor: string
 }
 
-const COLORS = ['#0d9488','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626','#6366f1','#f59e0b']
+const COLORS = ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626','#6366f1','#f59e0b']
 
 export default function SettingsPage() {
   const { user } = useAuthStore()

@@ -24,7 +24,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="h-16 flex items-center px-6 border-b border-stone-200">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-teal-600 rounded-lg flex items-center justify-center">
+          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
             <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 15" />
             </svg>
@@ -47,7 +47,7 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-teal-50 text-teal-700'
+                  ? 'bg-blue-50 text-blue-700'
                   : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
               }`
             }
@@ -70,7 +70,7 @@ export default function Sidebar() {
                 {avatarInitials(user.name)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-stone-900 truncate group-hover:text-teal-700 transition-colors">{user.name}</p>
+                <p className="text-sm font-medium text-stone-900 truncate group-hover:text-blue-700 transition-colors">{user.name}</p>
                 <p className="text-xs text-stone-500 truncate">{user.role}</p>
               </div>
             </Link>
