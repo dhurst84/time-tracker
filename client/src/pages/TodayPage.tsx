@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { format, isToday as dateFnsIsToday, parseISO, startOfWeek, addDays, addWeeks } from 'date-fns'
+import { format, parseISO, startOfWeek, addDays, addWeeks } from 'date-fns'
 import toast from 'react-hot-toast'
 import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -225,7 +225,7 @@ export default function TodayPage() {
   }
 
   const todayTotal = entries
-    .filter(e => dateFnsIsToday(parseISO(e.date)) && !e.isRunning)
+    .filter(e => toInputDate(e.date) === todayStr && !e.isRunning)
     .reduce((sum, e) => sum + e.hours, 0)
 
   const selectedDayEntries = entries.filter(e => toInputDate(e.date) === selectedDate)
