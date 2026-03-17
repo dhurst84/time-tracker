@@ -9,6 +9,15 @@ function getDateRange(req: Request) {
   const { startDate, endDate, preset } = req.query
   const now = new Date()
 
+  if (preset === 'today') {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    return { start, end: now }
+  }
+  if (preset === 'yesterday') {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    return { start, end }
+  }
   if (preset === 'this_week') {
     const start = new Date(now)
     start.setDate(now.getDate() - now.getDay())
@@ -23,6 +32,10 @@ function getDateRange(req: Request) {
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const end = new Date(now.getFullYear(), now.getMonth(), 0)
     return { start, end }
+  }
+  if (preset === 'ytd') {
+    const start = new Date(now.getFullYear(), 0, 1)
+    return { start, end: now }
   }
 
   return {

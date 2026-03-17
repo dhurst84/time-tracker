@@ -9,7 +9,7 @@ import api from '../lib/api'
 import { formatHours, toInputDate } from '../lib/utils'
 
 type ReportTab = 'by-client' | 'by-group' | 'by-project' | 'by-task' | 'by-member' | 'detail-log'
-type Preset = 'this_week' | 'this_month' | 'last_month' | 'custom'
+type Preset = 'today' | 'yesterday' | 'this_week' | 'this_month' | 'last_month' | 'ytd' | 'custom'
 
 const TABS: { id: ReportTab; label: string }[] = [
   { id: 'by-client', label: 'By Client' },
@@ -397,10 +397,10 @@ export default function ReportsPage() {
 
       {/* Date range */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        {(['this_week', 'this_month', 'last_month', 'custom'] as Preset[]).map(p => (
+        {(['today', 'yesterday', 'this_week', 'this_month', 'last_month', 'ytd', 'custom'] as Preset[]).map(p => (
           <button key={p} onClick={() => setPreset(p)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${preset === p ? 'bg-blue-600 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
-            {p === 'this_week' ? 'This week' : p === 'this_month' ? 'This month' : p === 'last_month' ? 'Last month' : 'Custom'}
+            {p === 'today' ? 'Today' : p === 'yesterday' ? 'Yesterday' : p === 'this_week' ? 'This Week' : p === 'this_month' ? 'This Month' : p === 'last_month' ? 'Last Month' : p === 'ytd' ? 'YTD' : 'Custom'}
           </button>
         ))}
         {preset === 'custom' && (
