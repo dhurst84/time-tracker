@@ -11,6 +11,7 @@ import TaskSelect from '../components/TaskSelect'
 
 interface Task { id: string; name: string; isBillable: boolean }
 interface Project { id: string; name: string; color: string; tasks: Task[]; client: { id: string; name: string } }
+interface User { id: string; name: string; avatarColor: string }
 interface TimeEntry {
   id: string
   date: string
@@ -50,6 +51,7 @@ export default function TodayPage() {
   const [manualHours, setManualHours] = useState('')
   const [manualNotes, setManualNotes] = useState('')
   const [manualProjectData, setManualProjectData] = useState<Project | null>(null)
+  const [additionalUserIds, setAdditionalUserIds] = useState<string[]>([])
 
   // Week nav
   const todayStr = toInputDate(new Date())
@@ -97,6 +99,13 @@ export default function TodayPage() {
     queryFn: () => api.get('/projects').then(r => r.data),
   })
 
+  // Fetch all users for "also track for" feature
+  const { data: allUsers = [] } = useQuery<User[]>({
+    queryKey: ['users'],
+    queryFn: () => api.get('/users').then(r => r.data),
+  })
+  const otherUsers = allUsers.filter(u => u.id !== user?.id)
+
   const startMutation = useMutation({
     mutationFn: (data: { projectId: string; taskId: string; notes: string }) =>
       api.post('/time-entries/start', data).then(r => r.data),
@@ -125,7 +134,7 @@ export default function TodayPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (data: { projectId: string; taskId: string; date: string; hours: number; notes: string }) =>
+    mutationFn: (data: { projectId: string; taskId: string; date: string; hours: number; notes: string; additionalUserIds?: string[] }) =>
       api.post('/time-entries', data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['time-entries'] })
@@ -135,6 +144,7 @@ export default function TodayPage() {
       setManualTask('')
       setManualHours('')
       setManualNotes('')
+      setAdditionalUserIds([])
       toast.success('Time entry added')
     },
     onError: () => toast.error('Failed to add entry'),
@@ -190,7 +200,14 @@ export default function TodayPage() {
     if (!manualProject || !manualTask || !manualHours) return toast.error('Fill all required fields')
     const hours = parseFloat(manualHours)
     if (isNaN(hours) || hours <= 0) return toast.error('Enter valid hours')
-    createMutation.mutate({ projectId: manualProject, taskId: manualTask, date: manualDate, hours, notes: manualNotes })
+    createMutation.mutate({
+      projectId: manualProject,
+      taskId: manualTask,
+      date: manualDate,
+      hours,
+      notes: manualNotes,
+      additionalUserIds: additionalUserIds.length > 0 ? additionalUserIds : undefined,
+    })
   }
 
   function startEdit(entry: TimeEntry) {
@@ -367,7 +384,7 @@ export default function TodayPage() {
           <div className="card w-full max-w-md p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-stone-900">Add Time Entry</h2>
-              <button onClick={() => setShowManual(false)} className="text-stone-400 hover:text-stone-600">
+              <button onClick={() => { setShowManual(false); setAdditionalUserIds([]) }} className="text-stone-400 hover:text-stone-600">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -413,8 +430,36 @@ export default function TodayPage() {
                 <label className="label">Notes (optional)</label>
                 <input type="text" value={manualNotes} onChange={e => setManualNotes(e.target.value)} className="input" />
               </div>
+              {otherUsers.length > 0 && (
+                <div>
+                  <label className="label">Also track for</label>
+                  <div className="border border-stone-200 rounded-lg divide-y divide-stone-100 max-h-36 overflow-y-auto">
+                    {otherUsers.map(u => (
+                      <label key={u.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-stone-50">
+                        <input
+                          type="checkbox"
+                          checked={additionalUserIds.includes(u.id)}
+                          onChange={e => {
+                            setAdditionalUserIds(prev =>
+                              e.target.checked ? [...prev, u.id] : prev.filter(id => id !== u.id)
+                            )
+                          }}
+                          className="rounded border-stone-300 text-orange-500 focus:ring-orange-400"
+                        />
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                          style={{ backgroundColor: u.avatarColor }}
+                        >
+                          {u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </div>
+                        <span className="text-sm text-stone-700">{u.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={() => setShowManual(false)} className="btn-secondary flex-1 justify-center">Cancel</button>
+                <button type="button" onClick={() => { setShowManual(false); setAdditionalUserIds([]) }} className="btn-secondary flex-1 justify-center">Cancel</button>
                 <button type="submit" disabled={createMutation.isPending} className="btn-primary flex-1 justify-center">Save</button>
               </div>
             </form>

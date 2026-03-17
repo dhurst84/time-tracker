@@ -62,7 +62,7 @@ timeEntriesRouter.get('/running', async (req: AuthRequest, res, next) => {
 
 timeEntriesRouter.post('/', async (req: AuthRequest, res, next) => {
   try {
-    const { projectId, taskId, date, hours, notes } = req.body
+    const { projectId, taskId, date, hours, notes, additionalUserIds } = req.body
     const entry = await prisma.timeEntry.create({
       data: {
         userId: req.userId!,
@@ -79,6 +79,23 @@ timeEntriesRouter.post('/', async (req: AuthRequest, res, next) => {
         task: true,
       },
     })
+
+    if (Array.isArray(additionalUserIds) && additionalUserIds.length > 0) {
+      await prisma.timeEntry.createMany({
+        data: additionalUserIds
+          .filter((uid: string) => uid !== req.userId)
+          .map((uid: string) => ({
+            userId: uid,
+            projectId,
+            taskId,
+            date: new Date(date),
+            hours: parseFloat(hours),
+            notes,
+            isRunning: false,
+          })),
+      })
+    }
+
     res.status(201).json(entry)
   } catch (err) { next(err) }
 })
