@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { useTimerStore } from '../store/timerStore'
-import { formatHours, formatTimer, toInputDate, avatarInitials } from '../lib/utils'
+import { formatHours, formatTimer, toInputDate, avatarInitials, parseTimeInput } from '../lib/utils'
 import ProjectSelect from '../components/ProjectSelect'
 import TaskSelect from '../components/TaskSelect'
 
@@ -42,6 +42,9 @@ export default function TodayPage() {
   const [logHours, setLogHours] = useState('')
   const [logDate, setLogDate] = useState(toInputDate(new Date()))
   const [timerProjectData, setTimerProjectData] = useState<Project | null>(null)
+
+  // Timer widget "also track for"
+  const [timerAdditionalUserIds, setTimerAdditionalUserIds] = useState<string[]>([])
 
   // Manual entry form
   const [showManual, setShowManual] = useState(false)
@@ -105,13 +108,14 @@ export default function TodayPage() {
   const otherUsers = allUsers.filter(u => u.id !== user?.id)
 
   const startMutation = useMutation({
-    mutationFn: (data: { projectId: string; taskId: string; notes: string }) =>
+    mutationFn: (data: { projectId: string; taskId: string; notes: string; additionalUserIds?: string[] }) =>
       api.post('/time-entries/start', data).then(r => r.data),
     onSuccess: (data) => {
       setRunningEntry(data)
       qc.invalidateQueries({ queryKey: ['time-entries'] })
       qc.invalidateQueries({ queryKey: ['team-entries-today'] })
       setTimerNotes('')
+      setTimerAdditionalUserIds([])
       toast.success('Timer started')
     },
     onError: () => toast.error('Failed to start timer'),
@@ -171,19 +175,25 @@ export default function TodayPage() {
 
   function handleStartTimer() {
     if (!timerProject || !timerTask) return toast.error('Select a project and task')
-    startMutation.mutate({ projectId: timerProject, taskId: timerTask, notes: timerNotes })
+    startMutation.mutate({
+      projectId: timerProject,
+      taskId: timerTask,
+      notes: timerNotes,
+      additionalUserIds: timerAdditionalUserIds.length > 0 ? timerAdditionalUserIds : undefined,
+    })
   }
 
   function handleLogTime() {
     if (!timerProject || !timerTask || !logHours) return toast.error('Select a project, task, and enter hours')
-    const hours = parseFloat(logHours)
-    if (isNaN(hours) || hours <= 0) return toast.error('Enter valid hours')
+    const hours = parseTimeInput(logHours)
+    if (isNaN(hours) || hours <= 0) return toast.error('Enter hours as decimal (1.5) or time (1:30)')
     createMutation.mutate({
       projectId: timerProject,
       taskId: timerTask,
       date: logDate,
       hours,
       notes: timerNotes,
+      additionalUserIds: timerAdditionalUserIds.length > 0 ? timerAdditionalUserIds : undefined,
     })
     setLogHours('')
     setLogDate(toInputDate(new Date()))
@@ -191,13 +201,14 @@ export default function TodayPage() {
     setTimerProject('')
     setTimerTask('')
     setTimerProjectData(null)
+    setTimerAdditionalUserIds([])
   }
 
   function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!manualProject || !manualTask || !manualHours) return toast.error('Fill all required fields')
-    const hours = parseFloat(manualHours)
-    if (isNaN(hours) || hours <= 0) return toast.error('Enter valid hours')
+    const hours = parseTimeInput(manualHours)
+    if (isNaN(hours) || hours <= 0) return toast.error('Enter hours as decimal (1.5) or time (1:30)')
     createMutation.mutate({
       projectId: manualProject,
       taskId: manualTask,
@@ -353,6 +364,34 @@ export default function TodayPage() {
               placeholder="What are you working on? (optional)"
               className="input w-full"
             />
+            {otherUsers.length > 0 && (
+              <div>
+                <label className="label">Also track for</label>
+                <div className="border border-stone-200 rounded-lg divide-y divide-stone-100 max-h-36 overflow-y-auto">
+                  {otherUsers.map(u => (
+                    <label key={u.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-stone-50">
+                      <input
+                        type="checkbox"
+                        checked={timerAdditionalUserIds.includes(u.id)}
+                        onChange={e => {
+                          setTimerAdditionalUserIds(prev =>
+                            e.target.checked ? [...prev, u.id] : prev.filter(id => id !== u.id)
+                          )
+                        }}
+                        className="rounded border-stone-300 text-orange-500 focus:ring-orange-400"
+                      />
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                        style={{ backgroundColor: u.avatarColor }}
+                      >
+                        {u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <span className="text-sm text-stone-700">{u.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-3 flex-wrap">
               <button
                 type="button"
@@ -372,12 +411,11 @@ export default function TodayPage() {
                   className="input w-36"
                 />
                 <input
-                  type="number"
-                  step="0.25"
-                  min="0.25"
+                  type="text"
+                  inputMode="decimal"
                   value={logHours}
                   onChange={e => setLogHours(e.target.value)}
-                  placeholder="Hours (e.g. 1.5)"
+                  placeholder="1.5 or 1:30"
                   className="input w-36"
                 />
                 <button
@@ -433,14 +471,12 @@ export default function TodayPage() {
               <div>
                 <label className="label">Hours</label>
                 <input
-                  type="number"
-                  step="0.25"
-                  min="0.25"
+                  type="text"
+                  inputMode="decimal"
                   value={manualHours}
                   onChange={e => setManualHours(e.target.value)}
-                  placeholder="e.g. 1.5"
+                  placeholder="1.5 or 1:30"
                   className="input"
-                  required
                 />
               </div>
               <div>
@@ -538,10 +574,11 @@ export default function TodayPage() {
                       className="input w-36"
                     />
                     <input
-                      type="number"
-                      step="0.25"
+                      type="text"
+                      inputMode="decimal"
                       value={editHours}
                       onChange={e => setEditHours(e.target.value)}
+                      placeholder="1.5 or 1:30"
                       className="input w-24"
                     />
                     <input
@@ -552,7 +589,11 @@ export default function TodayPage() {
                       className="input flex-1"
                     />
                     <button
-                      onClick={() => updateMutation.mutate({ id: entry.id, date: editDate, hours: parseFloat(editHours), notes: editNotes })}
+                      onClick={() => {
+                        const hours = parseTimeInput(editHours)
+                        if (isNaN(hours) || hours <= 0) return toast.error('Enter hours as decimal (1.5) or time (1:30)')
+                        updateMutation.mutate({ id: entry.id, date: editDate, hours, notes: editNotes })
+                      }}
                       className="btn-primary"
                     >Save</button>
                     <button onClick={() => setEditId(null)} className="btn-ghost">Cancel</button>

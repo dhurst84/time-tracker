@@ -16,6 +16,27 @@ export function formatHoursDecimal(hours: number): string {
   return hours.toFixed(2)
 }
 
+/**
+ * Parses a time input string in either decimal (1.5) or colon (1:30) format.
+ * Returns the hours as a decimal number, or NaN if the input is invalid.
+ */
+export function parseTimeInput(value: string): number {
+  const trimmed = value.trim()
+  if (!trimmed) return NaN
+
+  if (trimmed.includes(':')) {
+    const [hourPart, minutePart] = trimmed.split(':')
+    const hours = hourPart === '' ? 0 : parseInt(hourPart, 10)
+    const minutes = minutePart === '' ? 0 : parseInt(minutePart, 10)
+    if (isNaN(hours) || isNaN(minutes) || minutes < 0 || minutes > 59 || hours < 0) return NaN
+    if (hours === 0 && minutes === 0) return NaN
+    return hours + minutes / 60
+  }
+
+  const decimal = parseFloat(trimmed)
+  return decimal
+}
+
 export function formatTimer(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
