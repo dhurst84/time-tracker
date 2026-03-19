@@ -57,7 +57,7 @@ export default function TaskSelect({ tasks, value, onChange, disabled, placehold
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search..."
-              className="w-full px-2 py-1.5 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none"
+              className="w-full px-2 py-1.5 text-base text-stone-900 placeholder:text-stone-400 focus:outline-none touch-manipulation"
             />
           </div>
           <div className="max-h-56 overflow-y-auto">
