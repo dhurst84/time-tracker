@@ -239,47 +239,49 @@ export default function TodayPage() {
           <h1 className="text-xl font-semibold text-stone-900">Today</h1>
           <p className="text-sm text-stone-500">{format(new Date(), 'EEEE, MMMM d')}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span className="text-2xl font-mono font-medium text-stone-900">{formatHours(todayTotal)}</span>
-          {otherUsers.length > 0 && (
-            <div className="relative">
-              <button
-                onClick={() => setShowTeammatesDropdown(o => !o)}
-                className={`btn-secondary text-sm ${isViewingTeammate ? 'ring-1 ring-stone-300' : ''}`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                Teammates
-              </button>
-              {showTeammatesDropdown && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowTeammatesDropdown(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-stone-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden">
-                    {otherUsers.map(u => (
-                      <button
-                        key={u.id}
-                        onClick={() => { setViewingUserId(u.id); setShowTeammatesDropdown(false) }}
-                        className={`flex items-center gap-3 w-full px-3 py-2.5 hover:bg-stone-50 text-left transition-colors ${viewingUserId === u.id ? 'bg-stone-50 font-medium' : ''}`}
-                      >
-                        <div
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
-                          style={{ backgroundColor: u.avatarColor }}
+          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+            {otherUsers.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowTeammatesDropdown(o => !o)}
+                  className={`btn-secondary text-sm w-full sm:w-auto ${isViewingTeammate ? 'ring-1 ring-stone-300' : ''}`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  Teammates
+                </button>
+                {showTeammatesDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowTeammatesDropdown(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-stone-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden">
+                      {otherUsers.map(u => (
+                        <button
+                          key={u.id}
+                          onClick={() => { setViewingUserId(u.id); setShowTeammatesDropdown(false) }}
+                          className={`flex items-center gap-3 w-full px-3 py-2.5 hover:bg-stone-50 text-left transition-colors ${viewingUserId === u.id ? 'bg-stone-50 font-medium' : ''}`}
                         >
-                          {avatarInitials(u.name)}
-                        </div>
-                        <span className="text-sm text-stone-700">{u.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-          {!isViewingTeammate && (
-            <button onClick={() => setShowManual(true)} className="btn-secondary">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              Add time
-            </button>
-          )}
+                          <div
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                            style={{ backgroundColor: u.avatarColor }}
+                          >
+                            {avatarInitials(u.name)}
+                          </div>
+                          <span className="text-sm text-stone-700">{u.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            {!isViewingTeammate && (
+              <button onClick={() => setShowManual(true)} className="btn-secondary w-full sm:w-auto">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Add time
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -492,37 +494,39 @@ export default function TodayPage() {
                 )}
               </div>
             )}
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
               <button
                 type="button"
                 onClick={handleStartTimer}
                 disabled={startMutation.isPending}
-                className="btn-primary"
+                className="btn-primary w-full sm:w-auto"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                 Start timer
               </button>
-              <span className="text-stone-400 text-sm">or</span>
-              <div className="flex items-center gap-2 flex-1 flex-wrap">
-                <input
-                  type="date"
-                  value={logDate}
-                  onChange={e => setLogDate(e.target.value)}
-                  className="input w-36"
-                />
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={logHours}
-                  onChange={e => setLogHours(e.target.value)}
-                  placeholder="1.5 or 1:30"
-                  className="input w-36"
-                />
+              <span className="text-stone-400 text-sm text-center sm:text-left">or log time</span>
+              <div className="flex flex-col gap-2 flex-1">
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={logDate}
+                    onChange={e => setLogDate(e.target.value)}
+                    className="input flex-1"
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={logHours}
+                    onChange={e => setLogHours(e.target.value)}
+                    placeholder="1.5 or 1:30"
+                    className="input w-28"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={handleLogTime}
                   disabled={createMutation.isPending}
-                  className="btn-secondary"
+                  className="btn-secondary w-full"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   Log time
