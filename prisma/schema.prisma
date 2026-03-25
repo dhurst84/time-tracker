@@ -47,11 +47,6 @@ model Client {
   projects    Project[]
 }
 
-enum BillingType {
-  ONE_TIME
-  ONGOING
-}
-
 model Project {
   id             String        @id @default(cuid())
   name           String
@@ -60,7 +55,6 @@ model Project {
   recurringPeriod  String        @default("monthly")  // monthly | quarterly | biannually | annually
   budgetHours      Float?
   budgetResetDay   Int           @default(1)
-  billingType      BillingType   @default(ONE_TIME)
   notes          String?
   isActive       Boolean       @default(true)
   color          String        @default("#6366f1")

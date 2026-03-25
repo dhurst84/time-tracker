@@ -7,12 +7,11 @@ projectsRouter.use(authenticate)
 
 projectsRouter.get('/', async (req, res, next) => {
   try {
-    const { clientId, includeArchived, search, type, billingType } = req.query
+    const { clientId, includeArchived, search, type } = req.query
     const where: Record<string, unknown> = {}
     if (clientId) where.clientId = clientId
     if (includeArchived !== 'true') where.isActive = true
     if (type) where.type = type
-    if (billingType) where.billingType = billingType
     if (search) {
       where.OR = [
         { name: { contains: search as string, mode: 'insensitive' } },
@@ -140,7 +139,7 @@ projectsRouter.post('/', async (req, res, next) => {
 
 projectsRouter.patch('/:id', async (req, res, next) => {
   try {
-    const { name, type, recurringPeriod, budgetHours, notes, color, isActive, billingType } = req.body
+    const { name, type, recurringPeriod, budgetHours, notes, color, isActive } = req.body
     const data: Record<string, unknown> = {}
     if (name !== undefined) data.name = name
     if (type !== undefined) data.type = type
@@ -149,7 +148,6 @@ projectsRouter.patch('/:id', async (req, res, next) => {
     if (notes !== undefined) data.notes = notes
     if (color !== undefined) data.color = color
     if (isActive !== undefined) data.isActive = isActive
-    if (billingType !== undefined) data.billingType = billingType
 
     const project = await prisma.project.update({
       where: { id: req.params.id },

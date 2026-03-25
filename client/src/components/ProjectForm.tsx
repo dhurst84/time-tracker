@@ -20,7 +20,6 @@ interface ProjectFormProps {
     notes: string
     color: string
     clientId: string
-    billingType: string
   }>
 }
 
@@ -39,7 +38,6 @@ export default function ProjectForm({
   const [color, setColor] = useState(initial?.color || COLORS[0])
   const [notes, setNotes] = useState(initial?.notes || '')
   const [selectedClientId, setSelectedClientId] = useState(initial?.clientId || clientId || '')
-  const [billingType, setBillingType] = useState(initial?.billingType || 'ONE_TIME')
 
   const { data: clients = [] } = useQuery<SimpleClient[]>({
     queryKey: ['clients'],
@@ -59,7 +57,6 @@ export default function ProjectForm({
         budgetHours: budgetHours ? parseFloat(budgetHours) : null,
         color,
         notes,
-        billingType,
       })
     }} className="space-y-3">
       {showClientSelect && (
@@ -79,8 +76,8 @@ export default function ProjectForm({
         <div>
           <label className="label">Type</label>
           <select value={type} onChange={e => setType(e.target.value)} className="input">
-            <option value="one_time">One-time</option>
-            <option value="recurring">Recurring</option>
+            <option value="one_time">One-Time (Fixed Scope)</option>
+            <option value="recurring">Ongoing (Recurring)</option>
           </select>
         </div>
         {type === 'recurring' && (
@@ -98,27 +95,6 @@ export default function ProjectForm({
       <div>
         <label className="label">Budget (hours)</label>
         <input type="number" step="1" value={budgetHours} onChange={e => setBudgetHours(e.target.value)} className="input" placeholder="No limit" />
-      </div>
-      <div>
-        <label className="label">Billing Type</label>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setBillingType('ONE_TIME')}
-            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${billingType === 'ONE_TIME' ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-300'}`}
-          >
-            One-Time
-            <span className="block text-xs font-normal opacity-70">Fixed scope</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setBillingType('ONGOING')}
-            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${billingType === 'ONGOING' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-300'}`}
-          >
-            Ongoing
-            <span className="block text-xs font-normal opacity-70">Recurring</span>
-          </button>
-        </div>
       </div>
       <div>
         <label className="label">Notes</label>

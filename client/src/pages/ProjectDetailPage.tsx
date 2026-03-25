@@ -12,7 +12,6 @@ interface TaskTemplate { id: string; name: string; isBillable: boolean }
 interface Project {
   id: string; name: string; color: string; type: string; recurringPeriod: string
   budgetHours?: number; notes?: string; isActive: boolean; hoursUsed: number
-  billingType: string
   client: { id: string; name: string }
   tasks: Task[]
 }
@@ -177,11 +176,8 @@ export default function ProjectDetailPage() {
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-sm text-stone-500">
-                {project.type === 'one_time' ? 'One-time' : `Recurring · ${periodLabel}`}
+                {project.type === 'one_time' ? 'One-Time (Fixed Scope)' : `Ongoing · ${periodLabel}`}
               </p>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${project.billingType === 'ONGOING' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                {project.billingType === 'ONGOING' ? 'Ongoing' : 'One-Time'}
-              </span>
             </div>
             {project.notes && <p className="text-sm text-stone-500 mt-1">{project.notes}</p>}
           </div>
@@ -210,8 +206,8 @@ export default function ProjectDetailPage() {
                 <div>
                   <label className="label">Type</label>
                   <select value={editType} onChange={e => setEditType(e.target.value)} className="input">
-                    <option value="one_time">One-time</option>
-                    <option value="recurring">Recurring</option>
+                    <option value="one_time">One-Time (Fixed Scope)</option>
+                    <option value="recurring">Ongoing (Recurring)</option>
                   </select>
                 </div>
                 {editType === 'recurring' && (
