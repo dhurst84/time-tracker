@@ -12,6 +12,7 @@ interface TaskTemplate { id: string; name: string; isBillable: boolean }
 interface Project {
   id: string; name: string; color: string; type: string; recurringPeriod: string
   budgetHours?: number; notes?: string; isActive: boolean; hoursUsed: number
+  billingType: string
   client: { id: string; name: string }
   tasks: Task[]
 }
@@ -174,9 +175,14 @@ export default function ProjectDetailPage() {
                 </button>
               </div>
             </div>
-            <p className="text-sm text-stone-500 mt-0.5">
-              {project.type === 'one_time' ? 'One-time' : `Recurring · ${periodLabel}`}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-sm text-stone-500">
+                {project.type === 'one_time' ? 'One-time' : `Recurring · ${periodLabel}`}
+              </p>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${project.billingType === 'ONGOING' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                {project.billingType === 'ONGOING' ? 'Ongoing' : 'One-Time'}
+              </span>
+            </div>
             {project.notes && <p className="text-sm text-stone-500 mt-1">{project.notes}</p>}
           </div>
         </div>

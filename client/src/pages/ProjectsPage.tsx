@@ -16,6 +16,7 @@ interface Task { id: string; name: string; isBillable: boolean }
 interface Project {
   id: string; name: string; clientId: string; type: string; recurringPeriod: string
   budgetHours?: number; notes?: string; isActive: boolean; color: string
+  billingType: string
   client: ProjectClient
   tasks: Task[]
   _count: { timeEntries: number }
@@ -28,6 +29,7 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [billingTypeFilter, setBillingTypeFilter] = useState('')
   const [clientFilter, setClientFilter] = useState('')
   const [includeArchived, setIncludeArchived] = useState(false)
   const [showNewProject, setShowNewProject] = useState(false)
@@ -40,11 +42,12 @@ export default function ProjectsPage() {
   }, [search])
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
-    queryKey: ['projects-page', debouncedSearch, typeFilter, clientFilter, includeArchived],
+    queryKey: ['projects-page', debouncedSearch, typeFilter, billingTypeFilter, clientFilter, includeArchived],
     queryFn: () => api.get('/projects', {
       params: {
         ...(debouncedSearch && { search: debouncedSearch }),
         ...(typeFilter && { type: typeFilter }),
+        ...(billingTypeFilter && { billingType: billingTypeFilter }),
         ...(clientFilter && { clientId: clientFilter }),
         ...(includeArchived && { includeArchived: 'true' }),
       },
@@ -166,6 +169,11 @@ export default function ProjectsPage() {
           <option value="one_time">One-time</option>
           <option value="recurring">Recurring</option>
         </select>
+        <select value={billingTypeFilter} onChange={e => setBillingTypeFilter(e.target.value)} className="input w-auto">
+          <option value="">All billing types</option>
+          <option value="ONE_TIME">One-Time</option>
+          <option value="ONGOING">Ongoing</option>
+        </select>
         <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} className="input w-auto">
           <option value="">All clients</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -282,6 +290,9 @@ export default function ProjectsPage() {
                               </Link>
                               <span className={`text-xs px-1.5 py-0.5 rounded ${project.type === 'recurring' ? 'bg-blue-50 text-blue-700' : 'bg-stone-100 text-stone-600'}`}>
                                 {project.type === 'recurring' ? 'Recurring' : 'One-time'}
+                              </span>
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${project.billingType === 'ONGOING' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                                {project.billingType === 'ONGOING' ? 'Ongoing' : 'One-Time'}
                               </span>
                             </div>
                             <Link to={`/clients/${project.clientId}`} className="text-xs text-stone-500 hover:text-stone-700 mt-0.5 block">
