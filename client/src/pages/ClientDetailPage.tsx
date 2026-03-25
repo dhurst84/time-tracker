@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import api from '../lib/api'
 import BudgetBar from '../components/BudgetBar'
 import ClientAvatar from '../components/ClientAvatar'
+import ProjectForm from '../components/ProjectForm'
 import { formatHours } from '../lib/utils'
 
 interface Task { id: string; name: string; isBillable: boolean }
@@ -22,75 +23,6 @@ interface Client {
 }
 
 const COLORS = ['#2563eb','#7c3aed','#db2777','#ea580c','#16a34a','#0ea5e9','#ca8a04','#dc2626']
-
-function ProjectForm({ clientId, onSave, onCancel, submitLabel = 'Create', initial }: {
-  clientId: string
-  onSave: (d: Record<string, unknown>) => void
-  onCancel: () => void
-  submitLabel?: string
-  initial?: Partial<{ name: string; type: string; recurringPeriod: string; budgetHours: number; notes: string; color: string }>
-}) {
-  const [name, setName] = useState(initial?.name || '')
-  const [type, setType] = useState(initial?.type || 'one_time')
-  const [recurringPeriod, setRecurringPeriod] = useState(initial?.recurringPeriod || 'monthly')
-  const [budgetHours, setBudgetHours] = useState(initial?.budgetHours?.toString() || '')
-  const [color, setColor] = useState(initial?.color || COLORS[0])
-  const [notes, setNotes] = useState(initial?.notes || '')
-
-  return (
-    <form onSubmit={e => {
-      e.preventDefault()
-      onSave({ name, clientId, type, recurringPeriod: type === 'recurring' ? recurringPeriod : undefined, budgetHours: budgetHours ? parseFloat(budgetHours) : null, color, notes })
-    }} className="space-y-3">
-      <div>
-        <label className="label">Project name *</label>
-        <input value={name} onChange={e => setName(e.target.value)} className="input" required />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label">Type</label>
-          <select value={type} onChange={e => setType(e.target.value)} className="input">
-            <option value="one_time">One-time</option>
-            <option value="recurring">Recurring</option>
-          </select>
-        </div>
-        {type === 'recurring' && (
-          <div>
-            <label className="label">Period</label>
-            <select value={recurringPeriod} onChange={e => setRecurringPeriod(e.target.value)} className="input">
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="biannually">Bi-Annually</option>
-              <option value="annually">Annually</option>
-            </select>
-          </div>
-        )}
-      </div>
-      <div>
-        <label className="label">Budget (hours)</label>
-        <input type="number" step="1" value={budgetHours} onChange={e => setBudgetHours(e.target.value)} className="input" placeholder="No limit" />
-      </div>
-      <div>
-        <label className="label">Notes</label>
-        <input value={notes} onChange={e => setNotes(e.target.value)} className="input" />
-      </div>
-      <div>
-        <label className="label">Color</label>
-        <div className="flex gap-2">
-          {COLORS.map(c => (
-            <button key={c} type="button" onClick={() => setColor(c)}
-              className={`w-7 h-7 rounded-full ${color === c ? 'ring-2 ring-offset-2 ring-stone-400 scale-110' : ''}`}
-              style={{ backgroundColor: c }} />
-          ))}
-        </div>
-      </div>
-      <div className="flex gap-2 pt-1">
-        <button type="button" onClick={onCancel} className="btn-secondary flex-1 justify-center">Cancel</button>
-        <button type="submit" className="btn-primary flex-1 justify-center">{submitLabel}</button>
-      </div>
-    </form>
-  )
-}
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()

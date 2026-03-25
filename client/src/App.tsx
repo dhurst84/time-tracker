@@ -16,6 +16,7 @@ import AccountPage from './pages/AccountPage'
 import ClientGroupsPage from './pages/ClientGroupsPage'
 import TasksPage from './pages/TasksPage'
 import TeamPage from './pages/TeamPage'
+import ProjectsPage from './pages/ProjectsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -70,6 +71,7 @@ export default function App() {
           <Route index element={<Navigate to="/today" replace />} />
           <Route path="today" element={<TodayPage />} />
           <Route path="clients" element={<ClientsPage />} />
+          <Route path="projects" element={<ProjectsPage />} />
           <Route path="client-groups" element={<ClientGroupsPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="team" element={<TeamPage />} />

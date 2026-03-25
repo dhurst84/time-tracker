@@ -7,10 +7,17 @@ projectsRouter.use(authenticate)
 
 projectsRouter.get('/', async (req, res, next) => {
   try {
-    const { clientId, includeArchived } = req.query
+    const { clientId, includeArchived, search, type } = req.query
     const where: Record<string, unknown> = {}
     if (clientId) where.clientId = clientId
     if (includeArchived !== 'true') where.isActive = true
+    if (type) where.type = type
+    if (search) {
+      where.OR = [
+        { name: { contains: search as string, mode: 'insensitive' } },
+        { client: { name: { contains: search as string, mode: 'insensitive' } } },
+      ]
+    }
 
     const projects = await prisma.project.findMany({
       where,
@@ -21,7 +28,52 @@ projectsRouter.get('/', async (req, res, next) => {
       },
       orderBy: { name: 'asc' },
     })
-    res.json(projects)
+
+    // Aggregate total hours per project in one query
+    const allProjectIds = projects.map(p => p.id)
+    const totalHoursAgg = allProjectIds.length > 0
+      ? await prisma.timeEntry.groupBy({
+          by: ['projectId'],
+          where: { projectId: { in: allProjectIds } },
+          _sum: { hours: true },
+        })
+      : []
+    const totalHoursMap = new Map(totalHoursAgg.map(h => [h.projectId, h._sum.hours || 0]))
+
+    // Get latest budget reset date per recurring project in one query
+    const recurringProjectIds = projects.filter(p => p.type === 'recurring').map(p => p.id)
+    const resetMap = new Map<string, Date>()
+    if (recurringProjectIds.length > 0) {
+      const latestResets = await prisma.budgetReset.findMany({
+        where: { projectId: { in: recurringProjectIds } },
+        orderBy: { resetDate: 'desc' },
+      })
+      for (const reset of latestResets) {
+        if (!resetMap.has(reset.projectId)) {
+          resetMap.set(reset.projectId, reset.resetDate)
+        }
+      }
+    }
+
+    // For recurring projects with resets, get hours since the reset date
+    const sinceResetHoursMap = new Map<string, number>()
+    for (const project of projects.filter(p => resetMap.has(p.id))) {
+      const resetDate = resetMap.get(project.id)!
+      const agg = await prisma.timeEntry.aggregate({
+        where: { projectId: project.id, date: { gte: resetDate } },
+        _sum: { hours: true },
+      })
+      sinceResetHoursMap.set(project.id, agg._sum.hours || 0)
+    }
+
+    const result = projects.map(p => ({
+      ...p,
+      hoursUsed: p.type === 'recurring' && resetMap.has(p.id)
+        ? sinceResetHoursMap.get(p.id) || 0
+        : totalHoursMap.get(p.id) || 0,
+    }))
+
+    res.json(result)
   } catch (err) { next(err) }
 })
 
