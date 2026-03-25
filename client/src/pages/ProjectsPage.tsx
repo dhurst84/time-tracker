@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -7,18 +7,16 @@ import BudgetBar from '../components/BudgetBar'
 import ProjectForm from '../components/ProjectForm'
 import { formatHours } from '../lib/utils'
 
+interface ClientGroup { id: string; name: string; color: string }
+interface ProjectClient {
+  id: string; name: string; color: string
+  group?: ClientGroup | null
+}
 interface Task { id: string; name: string; isBillable: boolean }
 interface Project {
-  id: string
-  name: string
-  clientId: string
-  type: string
-  recurringPeriod: string
-  budgetHours?: number
-  notes?: string
-  isActive: boolean
-  color: string
-  client: { id: string; name: string; color: string }
+  id: string; name: string; clientId: string; type: string; recurringPeriod: string
+  budgetHours?: number; notes?: string; isActive: boolean; color: string
+  client: ProjectClient
   tasks: Task[]
   _count: { timeEntries: number }
   hoursUsed: number
@@ -34,6 +32,7 @@ export default function ProjectsPage() {
   const [includeArchived, setIncludeArchived] = useState(false)
   const [showNewProject, setShowNewProject] = useState(false)
   const [editProject, setEditProject] = useState<Project | null>(null)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300)
@@ -57,10 +56,40 @@ export default function ProjectsPage() {
     queryFn: () => api.get('/clients').then(r => r.data),
   })
 
+  const { data: groups = [] } = useQuery<ClientGroup[]>({
+    queryKey: ['client-groups'],
+    queryFn: () => api.get('/client-groups').then(r => r.data),
+  })
+
   // When viewing archived, API returns all — filter client-side to only show inactive
   const displayedProjects = includeArchived
     ? projects.filter(p => !p.isActive)
     : projects
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, { group: ClientGroup | null; projects: Project[] }>()
+    for (const g of groups) {
+      map.set(g.id, { group: g, projects: [] })
+    }
+    map.set('ungrouped', { group: null, projects: [] })
+    for (const p of displayedProjects) {
+      const key = p.client.group?.id ?? 'ungrouped'
+      if (!map.has(key)) map.set(key, { group: p.client.group ?? null, projects: [] })
+      map.get(key)!.projects.push(p)
+    }
+    for (const [key, val] of map) {
+      if (val.projects.length === 0) map.delete(key)
+    }
+    return map
+  }, [displayedProjects, groups])
+
+  function toggleGroup(key: string) {
+    setExpandedGroups(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
 
   const createProject = useMutation({
     mutationFn: (data: Record<string, unknown>) => api.post('/projects', data).then(r => r.data),
@@ -175,67 +204,123 @@ export default function ProjectsPage() {
 
       {/* Content */}
       {isLoading ? (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="card p-4">
-              <div className="skeleton h-16 w-full" />
+              <div className="skeleton h-10 w-full" />
             </div>
           ))}
         </div>
-      ) : displayedProjects.length === 0 ? (
+      ) : grouped.size === 0 ? (
         <div className="card p-12 text-center">
           <p className="font-medium text-stone-600">No projects found</p>
           <p className="text-sm text-stone-400 mt-1">Try adjusting your filters or create a new project.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {displayedProjects.map(project => {
-            const remaining = project.budgetHours != null ? project.budgetHours - project.hoursUsed : null
-            const isOver = remaining !== null && remaining < 0
+        <div className="flex flex-col gap-2">
+          {Array.from(grouped.entries()).map(([key, { group, projects: groupProjects }]) => {
+            const groupHoursUsed = groupProjects.reduce((sum, p) => sum + p.hoursUsed, 0)
+            const groupBudget = groupProjects.reduce((sum, p) => sum + (p.budgetHours || 0), 0)
+            const groupPct = groupBudget > 0 ? Math.min(100, (groupHoursUsed / groupBudget) * 100) : 0
+            const groupColor = group?.color ?? '#a8a29e'
+            const groupName = group?.name ?? 'Ungrouped'
+            const isExpanded = expandedGroups.has(key)
+
             return (
-              <div key={project.id} className={`card p-4 flex items-center gap-4 ${!project.isActive ? 'opacity-60' : ''}`}>
-                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Link to={`/projects/${project.id}`} className="font-medium text-stone-900 hover:text-blue-700">
-                      {project.name}
-                    </Link>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${project.type === 'recurring' ? 'bg-blue-50 text-blue-700' : 'bg-stone-100 text-stone-600'}`}>
-                      {project.type === 'recurring' ? 'Recurring' : 'One-time'}
-                    </span>
-                  </div>
-                  <Link to={`/clients/${project.clientId}`} className="text-xs text-stone-500 hover:text-stone-700 mt-0.5 block">
-                    {project.client.name}
-                  </Link>
-                  {project.budgetHours != null && (
-                    <div className="mt-1.5">
-                      <BudgetBar used={project.hoursUsed} budget={project.budgetHours} showLabel={false} />
-                      <p className="text-xs text-stone-400 mt-0.5">{formatHours(project.hoursUsed)} used of {project.budgetHours}h</p>
+              <div key={key} className="card overflow-hidden">
+                {/* Group header */}
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(key)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-stone-50 transition-colors text-left"
+                >
+                  <svg
+                    className={`w-4 h-4 text-stone-400 flex-shrink-0 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: groupColor }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-stone-900">{groupName}</span>
+                      <span className="text-xs text-stone-400">
+                        {groupProjects.length} project{groupProjects.length !== 1 ? 's' : ''}
+                      </span>
                     </div>
-                  )}
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-mono text-sm font-medium text-stone-700">{formatHours(project.hoursUsed)}</p>
-                  {remaining !== null && (
-                    <p className={`text-xs ${isOver ? 'text-red-500' : 'text-stone-400'}`}>
-                      {isOver ? `${formatHours(Math.abs(remaining))} over` : `${formatHours(remaining)} left`}
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-1 flex-shrink-0 border-l border-stone-100 pl-4">
-                  <button
-                    onClick={() => setEditProject(project)}
-                    className="text-xs text-stone-500 hover:text-stone-900 transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => archiveProject.mutate({ projectId: project.id, isActive: !project.isActive })}
-                    className="text-xs text-stone-500 hover:text-stone-900 transition-colors"
-                  >
-                    {project.isActive ? 'Archive' : 'Restore'}
-                  </button>
-                </div>
+                    {groupBudget > 0 && (
+                      <div className="mt-1.5 pr-2">
+                        <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${groupPct >= 100 ? 'bg-red-500' : groupPct >= 80 ? 'bg-amber-500' : 'bg-blue-500'}`}
+                            style={{ width: `${groupPct}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-stone-400 mt-0.5">{formatHours(groupHoursUsed)} of {formatHours(groupBudget)} budget</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-mono text-sm font-semibold text-stone-900">{formatHours(groupHoursUsed)}</p>
+                    <p className="text-xs text-stone-400">total</p>
+                  </div>
+                </button>
+
+                {/* Expanded project rows */}
+                {isExpanded && (
+                  <div className="border-t border-stone-100 divide-y divide-stone-100">
+                    {groupProjects.map(project => {
+                      const remaining = project.budgetHours != null ? project.budgetHours - project.hoursUsed : null
+                      const isOver = remaining !== null && remaining < 0
+                      return (
+                        <div key={project.id} className={`flex items-center gap-4 pl-10 pr-4 py-3 ${!project.isActive ? 'opacity-60' : ''}`}>
+                          <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Link to={`/projects/${project.id}`} className="font-medium text-stone-900 hover:text-blue-700">
+                                {project.name}
+                              </Link>
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${project.type === 'recurring' ? 'bg-blue-50 text-blue-700' : 'bg-stone-100 text-stone-600'}`}>
+                                {project.type === 'recurring' ? 'Recurring' : 'One-time'}
+                              </span>
+                            </div>
+                            <Link to={`/clients/${project.clientId}`} className="text-xs text-stone-500 hover:text-stone-700 mt-0.5 block">
+                              {project.client.name}
+                            </Link>
+                            {project.budgetHours != null && (
+                              <div className="mt-1.5">
+                                <BudgetBar used={project.hoursUsed} budget={project.budgetHours} showLabel={false} />
+                                <p className="text-xs text-stone-400 mt-0.5">{formatHours(project.hoursUsed)} used of {project.budgetHours}h</p>
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="font-mono text-sm font-medium text-stone-700">{formatHours(project.hoursUsed)}</p>
+                            {remaining !== null && (
+                              <p className={`text-xs ${isOver ? 'text-red-500' : 'text-stone-400'}`}>
+                                {isOver ? `${formatHours(Math.abs(remaining))} over` : `${formatHours(remaining)} left`}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0 border-l border-stone-100 pl-4">
+                            <button
+                              onClick={() => setEditProject(project)}
+                              className="text-xs text-stone-500 hover:text-stone-900 transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => archiveProject.mutate({ projectId: project.id, isActive: !project.isActive })}
+                              className="text-xs text-stone-500 hover:text-stone-900 transition-colors"
+                            >
+                              {project.isActive ? 'Archive' : 'Restore'}
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )
           })}

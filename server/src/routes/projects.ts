@@ -22,7 +22,7 @@ projectsRouter.get('/', async (req, res, next) => {
     const projects = await prisma.project.findMany({
       where,
       include: {
-        client: true,
+        client: { include: { group: true } },
         tasks: { where: { isActive: true } },
         _count: { select: { timeEntries: true } },
       },
